@@ -2,6 +2,7 @@ use compute::{
     buffer::UniformBuffer,
     export::{
         egui::{Context, Window},
+        nalgebra::Vector3,
         wgpu::RenderPass,
     },
     interactive::{GraphicsCtx, Interactive},
@@ -31,6 +32,7 @@ impl Interactive for App {
         self.uniform
             .upload(&Uniform {
                 camera: self.camera.clone(),
+                light_dir: Vector3::new(1.0, -1.0, 1.0).normalize(),
             })
             .unwrap();
 

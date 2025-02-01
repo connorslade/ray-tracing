@@ -1,4 +1,4 @@
-use std::f32::consts::FRAC_PI_2;
+use std::f32::consts::{FRAC_PI_2, TAU};
 
 use compute::{
     export::{
@@ -24,10 +24,11 @@ pub struct Camera {
 impl Camera {
     fn direction(&self) -> Vector3<f32> {
         Vector3::new(
-            self.pitch.cos() * self.yaw.cos(),
-            self.pitch.cos() * self.yaw.sin(),
+            self.yaw.cos() * self.pitch.cos(),
             self.pitch.sin(),
+            self.yaw.sin() * self.pitch.cos(),
         )
+        .normalize()
     }
 }
 
@@ -43,27 +44,31 @@ impl Camera {
     }
 
     pub fn handle_movement(&mut self, gcx: &GraphicsCtx, ctx: &Context) {
+        let dragging_viewport = ctx.dragged_id().is_none();
+        let delta_time = ctx.input(|x| x.stable_dt);
+
         let scale_factor = gcx.window.scale_factor() as f32;
         let window = gcx.window.inner_size();
         self.aspect = window.width as f32 / window.height as f32;
-
-        let dragging_viewport = ctx.dragged_id().is_none();
 
         ctx.input(|input| {
             if input.pointer.any_down() && dragging_viewport {
                 let delta = input.pointer.delta() * scale_factor;
                 let delta = Vector2::new(delta.x, delta.y);
 
-                self.pitch -= delta.y * 0.01;
-                self.yaw -= delta.x * 0.01;
+                self.yaw -= delta.x * 0.002;
+                self.pitch -= delta.y * 0.002;
 
-                const EPSILON: f32 = 0.0001;
-                self.pitch = self.pitch.clamp(-FRAC_PI_2 + EPSILON, FRAC_PI_2 - EPSILON);
+                self.yaw = self.yaw.rem_euclid(TAU);
+                self.pitch = self.pitch.clamp(-FRAC_PI_2 + 0.001, FRAC_PI_2 - 0.001);
             }
         });
 
-        let direction = self.direction();
-        let (w, a, s, d, space, shift, crtl) = ctx.input(|x| {
+        let forward = self.direction();
+        let right = Vector3::new(-forward.z, 0.0, forward.x).normalize();
+        let up = Vector3::y();
+
+        let (w, a, s, d, space, shift, ctrl) = ctx.input(|x| {
             (
                 x.key_down(Key::W),
                 x.key_down(Key::A),
@@ -75,11 +80,23 @@ impl Camera {
             )
         });
 
-        let speed = if crtl { 0.4 } else { 0.2 };
+        let mut velocity = Vector3::zeros();
+        let speed = if ctrl { 4.0 } else { 2.0 } * delta_time;
 
-        self.position += direction * speed * (w as i32 - s as i32) as f32;
-        self.position += direction.cross(&Vector3::z()) * speed * (d as i32 - a as i32) as f32;
-        self.position += Vector3::z() * speed * (space as i32 - shift as i32) as f32;
+        for (key, dir) in [
+            (w, forward),
+            (s, -forward),
+            (d, -right),
+            (a, right),
+            (space, up),
+            (shift, -up),
+        ] {
+            velocity += dir * key as u8 as f32;
+        }
+
+        if velocity.norm_squared() > 0.0 {
+            self.position += velocity.normalize() * speed;
+        }
     }
 }
 
