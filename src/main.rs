@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use anyhow::{Ok, Result};
 use camera::Camera;
 use compute::{
@@ -13,27 +11,29 @@ mod consts;
 mod misc;
 mod types;
 use app::App;
-use consts::SHADER_SOURCE;
+use consts::{DEFAULT_SPHERES, SHADER_SOURCE};
 use types::Uniform;
 
 fn main() -> Result<()> {
     let gpu = Gpu::init()?;
 
-    let uniform = gpu.create_uniform(&Uniform::default())?;
-    let spheres = gpu.create_storage_read(&vec![])?;
+    let spheres = DEFAULT_SPHERES.to_vec();
+
+    let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
+    let sphere_buffer = gpu.create_storage_read(&spheres)?;
 
     let pipeline = gpu
         .render_pipeline(SHADER_SOURCE)
-        .bind_buffer(&uniform, ShaderStages::FRAGMENT)
-        .bind_buffer(&spheres, ShaderStages::FRAGMENT)
+        .bind_buffer(&uniform_buffer, ShaderStages::FRAGMENT)
+        .bind_buffer(&sphere_buffer, ShaderStages::FRAGMENT)
         .finish();
 
     gpu.create_window(
         WindowAttributes::default().with_title("Ray Tracing"),
         App {
             pipeline,
-            uniform_buffer: uniform,
-            sphere_buffer: spheres,
+            uniform_buffer,
+            sphere_buffer,
 
             uniform: Uniform {
                 camera: Camera::default(),
@@ -42,7 +42,7 @@ fn main() -> Result<()> {
                 max_bounces: 100,
                 samples: 10,
             },
-            start: Instant::now(),
+            spheres,
         },
     )
     .run()?;

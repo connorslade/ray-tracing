@@ -19,7 +19,7 @@ pub struct Material {
     pub roughness: f32,
 }
 
-#[derive(ShaderType)]
+#[derive(ShaderType, Clone)]
 pub struct Sphere {
     pub position: Vector3<f32>,
     pub radius: f32,

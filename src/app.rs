@@ -1,9 +1,7 @@
-use std::time::Instant;
-
 use compute::{
     buffer::{StorageBuffer, UniformBuffer},
     export::{
-        egui::{Context, Slider, Window},
+        egui::{Context, Grid, Slider, Window},
         nalgebra::Vector3,
         wgpu::RenderPass,
         winit::{dpi::PhysicalPosition, window::CursorGrabMode},
@@ -13,7 +11,10 @@ use compute::{
     pipeline::render::RenderPipeline,
 };
 
-use crate::types::{Material, Sphere, Uniform};
+use crate::{
+    misc::vec3_dragger,
+    types::{Sphere, Uniform},
+};
 
 pub struct App {
     pub pipeline: RenderPipeline,
@@ -21,7 +22,7 @@ pub struct App {
     pub sphere_buffer: StorageBuffer<Vec<Sphere>, Immutable>,
 
     pub uniform: Uniform,
-    pub start: Instant,
+    pub spheres: Vec<Sphere>,
 }
 
 impl Interactive for App {
@@ -38,16 +39,48 @@ impl Interactive for App {
             .default_width(0.0)
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut self.uniform.max_bounces, 1..=100));
-                    ui.label("Max Bounces");
-                });
-
-                ui.horizontal(|ui| {
                     ui.add(Slider::new(&mut self.uniform.samples, 1..=20));
                     ui.label("Samples");
                 });
 
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut self.uniform.max_bounces, 1..=100));
+                    ui.label("Max Bounces");
+                });
+
                 ui.separator();
+
+                ui.collapsing("Spheres", |ui| {
+                    for (i, sphere) in self.spheres.iter_mut().enumerate() {
+                        let heading = format!("Sphere #{}", i + 1);
+                        ui.collapsing(&heading, |ui| {
+                            Grid::new(&heading).num_columns(2).show(ui, |ui| {
+                                ui.label("Position");
+                                vec3_dragger(ui, &mut sphere.position, |x| x.speed(0.01));
+                                ui.end_row();
+
+                                ui.label("Roughness");
+                                ui.add(Slider::new(&mut sphere.material.roughness, 0.0..=1.0));
+                                ui.end_row();
+
+                                let albedo = sphere.material.albedo;
+                                let mut color = [albedo.x, albedo.y, albedo.z];
+                                ui.label("Albedo");
+                                ui.color_edit_button_rgb(&mut color);
+                                sphere.material.albedo = Vector3::new(color[0], color[1], color[2]);
+                                ui.end_row();
+
+                                let emission = sphere.material.emission;
+                                let mut color = [emission.x, emission.y, emission.z];
+                                ui.label("Emission");
+                                ui.color_edit_button_rgb(&mut color);
+                                sphere.material.emission =
+                                    Vector3::new(color[0], color[1], color[2]);
+                                ui.end_row();
+                            });
+                        });
+                    }
+                });
 
                 ui.collapsing("Camera", |ui| {
                     self.uniform.camera.ui(ui);
@@ -56,31 +89,9 @@ impl Interactive for App {
     }
 
     fn render(&mut self, _gcx: GraphicsCtx, render_pass: &mut RenderPass) {
-        let t = self.start.elapsed().as_secs_f32().sin() + 1.5;
-        let spheres = vec![
-            Sphere {
-                position: Vector3::new(0.0, 0.0, t),
-                radius: 0.5,
-                material: Material {
-                    albedo: Vector3::new(1.0, 1.0, 1.0),
-                    emission: Vector3::new(0.0, 0.0, 0.0),
-                    roughness: 0.0,
-                },
-            },
-            Sphere {
-                position: Vector3::new(0.0, 0.0, -t),
-                radius: 0.5,
-                material: Material {
-                    albedo: Vector3::new(1.0, 0.5, 0.5),
-                    emission: Vector3::new(0.0, 0.0, 0.0),
-                    roughness: 0.5,
-                },
-            },
-        ];
-
         self.uniform.frame += 1;
-        self.sphere_buffer.upload_shrink(&spheres).unwrap();
         self.uniform_buffer.upload(&self.uniform).unwrap();
+        self.sphere_buffer.upload_shrink(&self.spheres).unwrap(); // todo: only on change
 
         self.pipeline.draw_quad(render_pass, 0..1);
     }
