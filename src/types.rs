@@ -1,12 +1,14 @@
-use compute::export::nalgebra::Vector3;
+use compute::export::nalgebra::{Vector2, Vector3};
 use encase::ShaderType;
 
 use crate::camera::Camera;
 
 #[derive(Default, ShaderType)]
 pub struct Uniform {
+    pub window: Vector2<u32>,
     pub camera: Camera,
     pub frame: u32,
+    pub accumulation_frame: u32,
 
     pub max_bounces: u32,
     pub samples: u32,

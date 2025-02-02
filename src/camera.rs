@@ -11,7 +11,7 @@ use encase::ShaderType;
 
 use crate::misc::{dragger, vec3_dragger};
 
-#[derive(Clone, ShaderType)]
+#[derive(ShaderType, Clone, PartialEq)]
 pub struct Camera {
     pub position: Vector3<f32>,
     pub pitch: f32,
@@ -43,7 +43,9 @@ impl Camera {
         dragger(ui, "Fov", &mut self.fov, |x| x.speed(0.01));
     }
 
-    pub fn handle_movement(&mut self, gcx: &GraphicsCtx, ctx: &Context) {
+    pub fn handle_movement(&mut self, gcx: &GraphicsCtx, ctx: &Context) -> bool {
+        let old_camera = self.clone();
+
         let dragging_viewport = ctx.dragged_id().is_none();
         let delta_time = ctx.input(|x| x.stable_dt);
 
@@ -102,6 +104,8 @@ impl Camera {
         if velocity.norm_squared() > 0.0 {
             self.position += velocity.normalize() * speed;
         }
+
+        self != &old_camera
     }
 }
 

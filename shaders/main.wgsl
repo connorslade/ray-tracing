@@ -1,11 +1,15 @@
 @group(0) @binding(0) var<uniform> ctx: Uniform;
 @group(0) @binding(1) var<storage, read> spheres: array<Sphere>;
+@group(0) @binding(2) var<storage, read_write> accumulation: array<vec3f>;
 
 const PI: f32 = 3.141592653589793;
 
 @fragment
 fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
-    seed = u32(in.uv.x * 100000.0) ^ u32(in.uv.y * 100000.0) + ctx.frame;
+    let pixel = vec2u(in.uv * vec2f(ctx.window));
+    let pixel_idx = pixel.y * ctx.window.x + pixel.x;
+
+    seed = (pixel_idx * 2479898233) ^ (ctx.frame * 98379842);
 
     let pos = in.uv.xy - 0.5;
 
@@ -13,8 +17,11 @@ fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
     for (var i = 0u; i < ctx.samples; i++) {
         color += main(pos);
     }
+    color /= f32(ctx.samples);
 
-    return vec4(color / f32(ctx.samples), 1.0);
+    accumulation[pixel_idx] = mix(accumulation[pixel_idx], color, 1.0 / f32(ctx.accumulation_frame));
+
+    return vec4(accumulation[pixel_idx], 1.0);
 }
 
 fn main(pos: vec2f) -> vec3f {
