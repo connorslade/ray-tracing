@@ -12,14 +12,14 @@ pub struct Uniform {
     pub samples: u32,
 }
 
-#[derive(ShaderType, Clone, Copy)]
+#[derive(ShaderType, Default, Clone, Copy)]
 pub struct Material {
     pub albedo: Vector3<f32>,
     pub emission: Vector3<f32>,
     pub roughness: f32,
 }
 
-#[derive(ShaderType, Clone)]
+#[derive(ShaderType, Default, Clone)]
 pub struct Sphere {
     pub position: Vector3<f32>,
     pub radius: f32,

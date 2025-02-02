@@ -1,7 +1,7 @@
 use compute::{
     buffer::{StorageBuffer, UniformBuffer},
     export::{
-        egui::{Context, Grid, Slider, Window},
+        egui::{Context, DragValue, Grid, Slider, Window},
         nalgebra::Vector3,
         wgpu::RenderPass,
         winit::{dpi::PhysicalPosition, window::CursorGrabMode},
@@ -12,7 +12,7 @@ use compute::{
 };
 
 use crate::{
-    misc::vec3_dragger,
+    misc::{dragger, vec3_dragger},
     types::{Sphere, Uniform},
 };
 
@@ -59,6 +59,10 @@ impl Interactive for App {
                                 vec3_dragger(ui, &mut sphere.position, |x| x.speed(0.01));
                                 ui.end_row();
 
+                                ui.label("Radius");
+                                ui.add(DragValue::new(&mut sphere.radius).speed(0.01));
+                                ui.end_row();
+
                                 ui.label("Roughness");
                                 ui.add(Slider::new(&mut sphere.material.roughness, 0.0..=1.0));
                                 ui.end_row();
@@ -79,6 +83,10 @@ impl Interactive for App {
                                 ui.end_row();
                             });
                         });
+                    }
+
+                    if ui.button("New").clicked() {
+                        self.spheres.push(Sphere::default());
                     }
                 });
 
