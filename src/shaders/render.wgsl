@@ -1,4 +1,7 @@
 @group(0) @binding(0) var<uniform> ctx: Uniform;
+@group(0) @binding(1) var<storage, read> spheres: array<Sphere>;
+
+// Type Defintions //
 
 struct Uniform {
     camera: Camera,
@@ -12,6 +15,26 @@ struct Camera {
 
     fov: f32,
     aspect: f32,
+}
+
+struct Material {
+    albedo: vec3f,
+    emission: vec3f,
+    roughness: f32,
+    metallic: f32,
+}
+
+struct Sphere {
+    position: vec3f,
+    radius: f32,
+    material: Material,
+}
+
+struct Hit {
+    position: vec3f,
+    normal: vec3f,
+    material: Material,
+    t: f32
 }
 
 // Vertex Shader //
@@ -35,21 +58,41 @@ fn vert(
 fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
     let pos = in.uv.xy - 0.5;
     let ray_dir = ray_direction(pos);
-
     let ray_origin = ctx.camera.pos;
-    let t = hit_sphere(vec3f(0, 0, -2), 0.5, ray_origin, ray_dir);
 
-    var color = vec3(0.0);
-    if (t > 0.0) {
-        let hit_point = ray_origin + t * ray_dir;
-        let normal = normalize(hit_point - vec3(0, 0, -2));
-        color = vec3(max(dot(normal, ctx.light_dir), 0.0));
+    let hit = trace_ray(ray_origin, ray_dir);
+    var color = background_color(ray_dir);
+
+    if (hit.t > 0.0) {
+        color = vec3(max(dot(hit.normal, ctx.light_dir), 0.0));
     }
 
     return vec4(color, 1.0);
 }
 
 // Intersection Tests //
+
+fn trace_ray(ray_origin: vec3f, ray_dir: vec3f) -> Hit {
+    var hit = default_hit();
+
+    for (var i = 0u; i < arrayLength(&spheres); i++) {
+        let sphere = spheres[i];
+
+        let t = hit_sphere(sphere.position, sphere.radius, ray_origin, ray_dir);
+
+        if t > 0.0 && (t < hit.t || hit.t < 0.0) {
+            let position =  ray_origin + ray_dir * t;
+            hit = Hit(
+                position,
+                normalize(position - sphere.position),
+                sphere.material,
+                t
+            );
+        }
+    }
+
+    return hit;
+}
 
 fn hit_sphere(center: vec3f, radius: f32, ray_origin: vec3f, ray_dir: vec3f) -> f32 {
     let oc = ray_origin - center;
@@ -80,8 +123,24 @@ fn camera_direction() -> vec3f {
     var yaw = ctx.camera.yaw;
 
     return normalize(vec3(
-      cos(yaw) * cos(pitch),
-      sin(pitch),
-      sin(yaw) * cos(pitch)
+        cos(yaw) * cos(pitch),
+        sin(pitch),
+        sin(yaw) * cos(pitch)
     ));
+}
+
+// Misc Functions //
+
+fn background_color(ray_dir: vec3f) -> vec3f {
+    let a = 0.5 * (ray_dir.y + 1.0);
+    return (1.0 - a) * vec3(1.0, 1.0, 1.0) + a * vec3(0.5, 0.7, 1.0);
+}
+
+fn default_hit() -> Hit {
+    return Hit(
+        vec3(0.0),
+        vec3(0.0),
+        Material(vec3(0.0), vec3(0.0), 1.0, 0.0),
+        -1.0
+    );
 }

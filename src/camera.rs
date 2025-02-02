@@ -71,7 +71,7 @@ impl Camera {
 
         let forward = self.direction();
         let right = -Vector3::new(-forward.z, 0.0, forward.x).normalize();
-        let up = -Vector3::y();
+        let up = Vector3::y();
 
         let (w, a, s, d, space, shift, ctrl) = ctx.input(|x| {
             (
