@@ -1,4 +1,7 @@
-use std::f32::consts::{FRAC_PI_2, TAU};
+use std::{
+    f32::consts::{FRAC_PI_2, TAU},
+    hash::{Hash, Hasher},
+};
 
 use compute::{
     export::{
@@ -8,6 +11,7 @@ use compute::{
     interactive::GraphicsCtx,
 };
 use encase::ShaderType;
+use ordered_float::OrderedFloat;
 
 use crate::misc::{dragger, vec3_dragger};
 
@@ -43,9 +47,7 @@ impl Camera {
         dragger(ui, "Fov", &mut self.fov, |x| x.speed(0.01));
     }
 
-    pub fn handle_movement(&mut self, gcx: &GraphicsCtx, ctx: &Context) -> bool {
-        let old_camera = self.clone();
-
+    pub fn handle_movement(&mut self, gcx: &GraphicsCtx, ctx: &Context) {
         let dragging_viewport = ctx.dragged_id().is_none();
         let delta_time = ctx.input(|x| x.stable_dt);
 
@@ -104,8 +106,6 @@ impl Camera {
         if velocity.norm_squared() > 0.0 {
             self.position += velocity.normalize() * speed;
         }
-
-        self != &old_camera
     }
 }
 
@@ -119,5 +119,15 @@ impl Default for Camera {
             fov: FRAC_PI_2,
             aspect: 0.0,
         }
+    }
+}
+
+impl Hash for Camera {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.position.map(OrderedFloat).hash(state);
+        OrderedFloat(self.pitch).hash(state);
+        OrderedFloat(self.yaw).hash(state);
+        OrderedFloat(self.fov).hash(state);
+        OrderedFloat(self.aspect).hash(state);
     }
 }

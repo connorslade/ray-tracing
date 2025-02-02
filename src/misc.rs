@@ -1,3 +1,5 @@
+use std::hash::{DefaultHasher, Hash, Hasher};
+
 use compute::export::{
     egui::{emath::Numeric, DragValue, Ui},
     nalgebra::Vector3,
@@ -27,4 +29,10 @@ pub fn vec3_dragger<Num: Numeric>(
         ui.label("×");
         ui.add(func(DragValue::new(&mut val[2])));
     });
+}
+
+pub fn hash<T: Hash>(item: T) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    item.hash(&mut hasher);
+    hasher.finish()
 }

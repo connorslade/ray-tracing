@@ -12,7 +12,7 @@ use compute::{
 };
 
 use crate::{
-    misc::vec3_dragger,
+    misc::{hash, vec3_dragger},
     types::{Sphere, Uniform},
 };
 
@@ -29,6 +29,12 @@ pub struct App {
     pub accumulate: bool,
 }
 
+impl App {
+    pub fn invalidate_accumulation(&mut self) {
+        self.uniform.accumulation_frame = 1;
+    }
+}
+
 impl Interactive for App {
     fn ui(&mut self, gcx: GraphicsCtx, ctx: &Context) {
         let window = gcx.window.inner_size();
@@ -38,9 +44,8 @@ impl Interactive for App {
             .unwrap();
         gcx.window.set_cursor_grab(CursorGrabMode::None).unwrap();
 
-        if self.uniform.camera.handle_movement(&gcx, ctx) {
-            self.uniform.accumulation_frame = 1;
-        }
+        let old_camera = hash(&self.uniform.camera);
+        self.uniform.camera.handle_movement(&gcx, ctx);
 
         Window::new("Ray Tracing")
             .default_width(0.0)
@@ -58,6 +63,7 @@ impl Interactive for App {
                 ui.separator();
 
                 ui.collapsing("Spheres", |ui| {
+                    let old_spheres = hash(&self.spheres);
                     for (i, sphere) in self.spheres.iter_mut().enumerate() {
                         let heading = format!("Sphere #{}", i + 1);
                         ui.collapsing(&heading, |ui| {
@@ -95,6 +101,11 @@ impl Interactive for App {
                     if ui.button("New").clicked() {
                         self.spheres.push(Sphere::default());
                     }
+
+                    if hash(&self.spheres) != old_spheres {
+                        self.invalidate_accumulation();
+                        self.sphere_buffer.upload_shrink(&self.spheres).unwrap();
+                    }
                 });
 
                 ui.collapsing("Camera", |ui| {
@@ -105,6 +116,10 @@ impl Interactive for App {
 
                 ui.checkbox(&mut self.accumulate, "Accumulate");
             });
+
+        if hash(&self.uniform.camera) != old_camera {
+            self.invalidate_accumulation();
+        }
     }
 
     fn render(&mut self, gcx: GraphicsCtx, render_pass: &mut RenderPass) {
@@ -127,7 +142,6 @@ impl Interactive for App {
 
         self.uniform.frame += 1;
         self.uniform_buffer.upload(&self.uniform).unwrap();
-        self.sphere_buffer.upload_shrink(&self.spheres).unwrap(); // todo: only on change
 
         self.pipeline.draw_quad(render_pass, 0..1);
     }
