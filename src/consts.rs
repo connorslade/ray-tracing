@@ -5,7 +5,7 @@ use compute::export::{
     wgpu::{ShaderModuleDescriptor, ShaderSource},
 };
 
-use crate::types::{Material, Sphere};
+use crate::types::{Material, Sphere, Triangle};
 
 macro_rules! include_shader {
     ($name:expr) => {
@@ -27,20 +27,22 @@ pub const SHADER_SOURCE: ShaderModuleDescriptor = ShaderModuleDescriptor {
 
 pub const DEFAULT_SPHERES: [Sphere; 3] = [
     Sphere {
-        position: Vector3::new(0.0, 0.0, 1.0),
+        position: Vector3::new(0.0, -0.5, 1.0),
         radius: 0.5,
         material: Material {
             albedo: Vector3::new(1.0, 1.0, 1.0),
             emission: Vector3::new(0.0, 0.0, 0.0),
+            emission_strength: 0.0,
             roughness: 0.0,
         },
     },
     Sphere {
-        position: Vector3::new(0.0, 0.0, -1.0),
+        position: Vector3::new(0.0, -0.5, -1.0),
         radius: 0.5,
         material: Material {
             albedo: Vector3::new(1.0, 0.8, 0.8),
             emission: Vector3::new(0.0, 0.0, 0.0),
+            emission_strength: 0.0,
             roughness: 0.1,
         },
     },
@@ -50,7 +52,16 @@ pub const DEFAULT_SPHERES: [Sphere; 3] = [
         material: Material {
             albedo: Vector3::new(0.8, 0.8, 1.0),
             emission: Vector3::new(0.0, 0.0, 0.0),
+            emission_strength: 0.0,
             roughness: 1.0,
         },
     },
 ];
+
+pub const DEFAULT_TRIANGLES: [Triangle; 1] = [Triangle {
+    v0: Vector3::new(0.0, 0.0, 0.0),
+    v1: Vector3::new(0.0, 0.0, -1.0),
+    v2: Vector3::new(0.0, 0.0, 1.0),
+
+    normal: Vector3::new(0.0, 1.0, 0.0),
+}];

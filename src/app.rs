@@ -12,7 +12,7 @@ use compute::{
 };
 
 use crate::{
-    misc::{hash, vec3_dragger},
+    misc::{dragger, hash, vec3_dragger},
     types::{Sphere, Uniform},
 };
 
@@ -94,6 +94,12 @@ impl Interactive for App {
                                 sphere.material.emission =
                                     Vector3::new(color[0], color[1], color[2]);
                                 ui.end_row();
+
+                                ui.label("Emission Strength");
+                                ui.add(
+                                    DragValue::new(&mut sphere.material.emission_strength)
+                                        .speed(0.1),
+                                );
                             });
                         });
                     }
@@ -111,6 +117,8 @@ impl Interactive for App {
                 ui.collapsing("Camera", |ui| {
                     self.uniform.camera.ui(ui);
                 });
+
+                dragger(ui, "Exposure", &mut self.uniform.exposure, |x| x.speed(0.1));
 
                 ui.separator();
 

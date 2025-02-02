@@ -1,3 +1,36 @@
+fn hit_sphere(center: vec3f, radius: f32, ray_origin: vec3f, ray_dir: vec3f) -> f32 {
+    let oc = center - ray_origin;
+    let h = dot(ray_dir, oc);
+    let c = dot(oc, oc) - radius * radius;
+    let discriminant = h * h - c;
+
+    if discriminant < 0 { return -1.0; }
+    return (h - sqrt(discriminant));
+}
+
+fn hit_triangle(v0: vec3f, v1: vec3f, v2: vec3f, ray_origin: vec3f, ray_dir: vec3f) -> f32 {
+    let edge1 = v1 - v0;
+    let edge2 = v2 - v0;
+    let pvec = cross(ray_dir, edge2);
+    let det = dot(edge1, pvec);
+
+    if abs(det) < 1e-6 { return -1.0; }
+
+    let inv_det = 1.0 / det;
+    let tvec = ray_origin - v0;
+
+    let u = dot(tvec, pvec) * inv_det;
+    if u < 0.0 || u > 1.0 { return -1.0; }
+
+    let qvec = cross(tvec, edge1);
+    let v = dot(ray_dir, qvec) * inv_det;
+    if v < 0.0 || u + v > 1.0 { return -1.0; }
+
+    let t = dot(edge2, qvec) * inv_det;
+    if t >= 1e-6 { return t; }
+    return -1.0;
+}
+
 fn ray_direction(pos: vec2f) -> vec3f {
     let forward = camera_direction();
     let right = normalize(cross(vec3f(0, 1, 0), forward));

@@ -10,6 +10,7 @@ use crate::camera::Camera;
 pub struct Uniform {
     pub window: Vector2<u32>,
     pub camera: Camera,
+    pub exposure: f32,
     pub frame: u32,
     pub accumulation_frame: u32,
 
@@ -21,6 +22,7 @@ pub struct Uniform {
 pub struct Material {
     pub albedo: Vector3<f32>,
     pub emission: Vector3<f32>,
+    pub emission_strength: f32,
     pub roughness: f32,
 }
 
@@ -31,10 +33,20 @@ pub struct Sphere {
     pub material: Material,
 }
 
+#[derive(ShaderType, Default, Copy, Clone, PartialEq)]
+pub struct Triangle {
+    pub v0: Vector3<f32>,
+    pub v1: Vector3<f32>,
+    pub v2: Vector3<f32>,
+
+    pub normal: Vector3<f32>,
+}
+
 impl Hash for Material {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.albedo.map(OrderedFloat).hash(state);
         self.emission.map(OrderedFloat).hash(state);
+        OrderedFloat(self.emission_strength).hash(state);
         OrderedFloat(self.roughness).hash(state);
     }
 }

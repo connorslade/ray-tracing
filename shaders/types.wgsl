@@ -1,6 +1,7 @@
 struct Uniform {
     window: vec2u,
     camera: Camera,
+    exposure: f32,
     frame: u32,
     accumulation_frame: u32,
 
@@ -20,6 +21,7 @@ struct Camera {
 struct Material {
     albedo: vec3f,
     emission: vec3f,
+    emission_strength: f32,
     roughness: f32,
 }
 
@@ -27,6 +29,14 @@ struct Sphere {
     position: vec3f,
     radius: f32,
     material: Material,
+}
+
+struct Triangle {
+    v0: vec3f,
+    v1: vec3f,
+    v2: vec3f,
+
+    normal: vec3f
 }
 
 struct Hit {
@@ -40,7 +50,7 @@ fn default_hit() -> Hit {
     return Hit(
         vec3(0.0),
         vec3(0.0),
-        Material(vec3(0.0), vec3(0.0), 1.0),
+        Material(vec3(0.0), vec3(0.0), 0.0, 1.0),
         -1.0
     );
 }
