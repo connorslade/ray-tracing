@@ -11,7 +11,7 @@ fn ray_direction(pos: vec2f) -> vec3f {
 
 fn get_scattered_direction(ray_dir: vec3f, hit: Hit) -> vec3f {
     let specular_dir = reflect(ray_dir, hit.normal);
-    let diffuse_dir = normalize(hit.normal + rand_unit_vector());
+    let diffuse_dir = rand_hemisphere_vector(hit.normal);
     return mix(specular_dir, diffuse_dir, hit.material.roughness);
 }
 

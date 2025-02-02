@@ -6,7 +6,10 @@ use crate::camera::Camera;
 #[derive(Default, ShaderType)]
 pub struct Uniform {
     pub camera: Camera,
+    pub frame: u32,
+
     pub max_bounces: u32,
+    pub samples: u32,
 }
 
 #[derive(ShaderType, Clone, Copy)]
@@ -14,7 +17,6 @@ pub struct Material {
     pub albedo: Vector3<f32>,
     pub emission: Vector3<f32>,
     pub roughness: f32,
-    pub metallic: f32,
 }
 
 #[derive(ShaderType)]

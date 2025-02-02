@@ -1,9 +1,23 @@
 @group(0) @binding(0) var<uniform> ctx: Uniform;
 @group(0) @binding(1) var<storage, read> spheres: array<Sphere>;
 
+const PI: f32 = 3.141592653589793;
+
 @fragment
 fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
+    seed = u32(in.uv.x * 100000.0) ^ u32(in.uv.y * 100000.0) + ctx.frame;
+
     let pos = in.uv.xy - 0.5;
+
+    var color = vec3(0.0);
+    for (var i = 0u; i < ctx.samples; i++) {
+        color += main(pos);
+    }
+
+    return vec4(color / f32(ctx.samples), 1.0);
+}
+
+fn main(pos: vec2f) -> vec3f {
     var ray_dir = ray_direction(pos);
     var ray_origin = ctx.camera.pos;
 
@@ -19,16 +33,13 @@ fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
         }
 
         color += throughput * hit.material.emission;
+        throughput *= hit.material.albedo;
 
-        let scatter_dir = get_scattered_direction(ray_dir, hit);
-        let attenuation = hit.material.albedo;
-
-        ray_origin = hit.position + hit.normal * 1e-4;
-        ray_dir = scatter_dir;
-        throughput *= attenuation;
+        ray_origin = hit.position;
+        ray_dir = get_scattered_direction(ray_dir, hit);
     }
 
-    return vec4(color, 1.0);
+    return color;
 }
 
 fn trace_ray(ray_origin: vec3f, ray_dir: vec3f) -> Hit {

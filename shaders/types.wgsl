@@ -1,6 +1,9 @@
 struct Uniform {
     camera: Camera,
-    max_bounces: u32
+    frame: u32,
+
+    max_bounces: u32,
+    samples: u32,
 }
 
 struct Camera {
@@ -16,7 +19,6 @@ struct Material {
     albedo: vec3f,
     emission: vec3f,
     roughness: f32,
-    metallic: f32,
 }
 
 struct Sphere {
@@ -36,7 +38,7 @@ fn default_hit() -> Hit {
     return Hit(
         vec3(0.0),
         vec3(0.0),
-        Material(vec3(0.0), vec3(0.0), 1.0, 0.0),
+        Material(vec3(0.0), vec3(0.0), 1.0),
         -1.0
     );
 }

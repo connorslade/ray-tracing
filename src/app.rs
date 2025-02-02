@@ -42,6 +42,11 @@ impl Interactive for App {
                     ui.label("Max Bounces");
                 });
 
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut self.uniform.samples, 1..=20));
+                    ui.label("Samples");
+                });
+
                 ui.separator();
 
                 ui.collapsing("Camera", |ui| {
@@ -57,10 +62,9 @@ impl Interactive for App {
                 position: Vector3::new(0.0, 0.0, t),
                 radius: 0.5,
                 material: Material {
-                    albedo: Vector3::new(0.5, 1.0, 1.0),
+                    albedo: Vector3::new(1.0, 1.0, 1.0),
                     emission: Vector3::new(0.0, 0.0, 0.0),
                     roughness: 0.0,
-                    metallic: 0.0,
                 },
             },
             Sphere {
@@ -69,13 +73,13 @@ impl Interactive for App {
                 material: Material {
                     albedo: Vector3::new(1.0, 0.5, 0.5),
                     emission: Vector3::new(0.0, 0.0, 0.0),
-                    roughness: 0.0,
-                    metallic: 0.0,
+                    roughness: 0.5,
                 },
             },
         ];
 
-        self.sphere_buffer.upload_shrink(&spheres);
+        self.uniform.frame += 1;
+        self.sphere_buffer.upload_shrink(&spheres).unwrap();
         self.uniform_buffer.upload(&self.uniform).unwrap();
 
         self.pipeline.draw_quad(render_pass, 0..1);
