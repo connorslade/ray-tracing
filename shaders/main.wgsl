@@ -27,54 +27,56 @@ fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
 
 fn main(pos: vec2f) -> vec3f {
     let offset = (vec2(rand(), rand()) * 2.0 - 1.0) / vec2f(ctx.window);
-    var ray_dir = ray_direction(pos + offset);
-    var ray_origin = ctx.camera.pos;
+    var ray = Ray(ctx.camera.pos, ray_direction(pos + offset));
 
     var light = vec3(0.0);
     var color = vec3(1.0);
 
     for (var bounce = 0u; bounce <= ctx.max_bounces; bounce++) {
-        let hit = trace_ray(ray_origin, ray_dir);
+        let trace = trace_ray(ray);
 
-        if (hit.t < 0.0) {
-            light += background_color(ray_dir) * color;
+        if trace.hit.t < 0.0 {
+            light += background_color(ray.dir) * color;
             break;
         }
 
-        let material = hit.material;
+        let material = trace.material;
         let emitted = material.emission * material.emission_strength;
         light += emitted * color;
         color *= material.albedo;
 
-        ray_origin = hit.position;
-        ray_dir = get_scattered_direction(ray_dir, hit);
+        ray = Ray(
+            trace.hit.position,
+            get_scattered_direction(ray, trace)
+        );
     }
 
     return light;
 }
 
-fn trace_ray(ray_origin: vec3f, ray_dir: vec3f) -> Hit {
+fn trace_ray(ray: Ray) -> TraceResult {
     var hit = default_hit();
+    var material = default_material();
 
     for (var i = 0u; i < arrayLength(&spheres); i++) {
         let sphere = spheres[i];
-        let t = hit_sphere(sphere.position, sphere.radius, ray_origin, ray_dir);
+        let result = hit_sphere(sphere, ray);
 
-        if t > 0.0 && (t < hit.t || hit.t < 0.0) {
-            let position =  ray_origin + ray_dir * t;
-            hit = Hit(position, normalize(position - sphere.position), sphere.material, t);
+        if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
+            hit = result;
+            material = sphere.material;
         }
     }
 
-    for (var i = 0u; i < arrayLength(&triangles); i++) {
-        let triangle = triangles[i];
-        let t = hit_triangle(triangle.v0, triangle.v1, triangle.v2, ray_origin, ray_dir);
+    // for (var i = 0u; i < arrayLength(&triangles); i++) {
+    //     let triangle = triangles[i];
+    //     let t = hit_triangle(triangle.v0, triangle.v1, triangle.v2, ray_origin, ray_dir);
 
-        if t > 0.0 && (t < hit.t || hit.t < 0.0) {
-            let position =  ray_origin + ray_dir * t;
-            hit = Hit(position, triangle.normal, Material(vec3(1.0, 0.0, 0.0), vec3(0.0), 0.0, 1.0), t);
-        }
-    }
+    //     if t > 0.0 && (t < hit.t || hit.t < 0.0) {
+    //         let position =  ray_origin + ray_dir * t;
+    //         hit = Hit(position, triangle.normal, Material(vec3(1.0, 0.0, 0.0), vec3(0.0), 0.0, 1.0), t);
+    //     }
+    // }
 
-    return hit;
+    return TraceResult(hit, material);
 }

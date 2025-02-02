@@ -1,34 +1,38 @@
-fn hit_sphere(center: vec3f, radius: f32, ray_origin: vec3f, ray_dir: vec3f) -> f32 {
-    let oc = center - ray_origin;
-    let h = dot(ray_dir, oc);
-    let c = dot(oc, oc) - radius * radius;
+fn hit_sphere(sphere: Sphere, ray: Ray) -> Hit {
+    let oc = sphere.position - ray.pos;
+    let h = dot(ray.dir, oc);
+    let c = dot(oc, oc) - sphere.radius * sphere.radius;
     let discriminant = h * h - c;
 
-    if discriminant < 0 { return -1.0; }
-    return (h - sqrt(discriminant));
+    if discriminant < 0 { return default_hit(); }
+
+    let t = h - sqrt(discriminant);
+    let position = ray.pos + ray.dir * t;
+    return Hit(
+        position,
+        normalize(position - sphere.position),
+        t
+    );
 }
 
-fn hit_triangle(v0: vec3f, v1: vec3f, v2: vec3f, ray_origin: vec3f, ray_dir: vec3f) -> f32 {
-    let edge1 = v1 - v0;
-    let edge2 = v2 - v0;
-    let pvec = cross(ray_dir, edge2);
-    let det = dot(edge1, pvec);
+fn hit_triangle(triangle: Triangle, ray: Ray) -> Hit {
+    let edge_ab = triangle.v1 - triangle.v0;
+    let edge_ac = triangle.v2 - triangle.v0;
+    let normal = cross(edge_ab, edge_ac);
+    let ao = ray.pos - triangle.v0;
+    let dao = cross(ao, ray.dir);
 
-    if abs(det) < 1e-6 { return -1.0; }
-
+    let det = -dot(ray.dir, normal);
     let inv_det = 1.0 / det;
-    let tvec = ray_origin - v0;
 
-    let u = dot(tvec, pvec) * inv_det;
-    if u < 0.0 || u > 1.0 { return -1.0; }
+    let dst = dot(ao, normal) * inv_det;
+    let u = dot(edge_ac, dao) * inv_det;
+    let v = -dot(edge_ab, dao) * inv_det;
+    let w = 1.0 - u - v;
 
-    let qvec = cross(tvec, edge1);
-    let v = dot(ray_dir, qvec) * inv_det;
-    if v < 0.0 || u + v > 1.0 { return -1.0; }
-
-    let t = dot(edge2, qvec) * inv_det;
-    if t >= 1e-6 { return t; }
-    return -1.0;
+    let hit_pos = ray.pos + ray.dir * dst;
+    let hit_normal = normalize(triangle.n0 * w + triangle.n1 * u + triangle.n2 * v);
+    return Hit(hit_pos, hit_normal, dst);
 }
 
 fn ray_direction(pos: vec2f) -> vec3f {
@@ -42,10 +46,10 @@ fn ray_direction(pos: vec2f) -> vec3f {
     return normalize(forward + right * uv.x + up * uv.y);
 }
 
-fn get_scattered_direction(ray_dir: vec3f, hit: Hit) -> vec3f {
-    let specular_dir = reflect(ray_dir, hit.normal);
-    let diffuse_dir = rand_hemisphere_vector(hit.normal);
-    return mix(specular_dir, diffuse_dir, hit.material.roughness);
+fn get_scattered_direction(ray: Ray, trace: TraceResult) -> vec3f {
+    let specular_dir = reflect(ray.dir, trace.hit.normal);
+    let diffuse_dir = rand_hemisphere_vector(trace.hit.normal);
+    return mix(specular_dir, diffuse_dir, trace.material.roughness);
 }
 
 fn camera_direction() -> vec3f {

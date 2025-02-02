@@ -36,21 +36,31 @@ struct Triangle {
     v1: vec3f,
     v2: vec3f,
 
-    normal: vec3f
+    n0: vec3f,
+    n1: vec3f,
+    n2: vec3f,
+}
+
+struct Ray {
+    pos: vec3f,
+    dir: vec3f
 }
 
 struct Hit {
     position: vec3f,
     normal: vec3f,
-    material: Material,
     t: f32
 }
 
+struct TraceResult {
+    hit: Hit,
+    material: Material
+}
+
 fn default_hit() -> Hit {
-    return Hit(
-        vec3(0.0),
-        vec3(0.0),
-        Material(vec3(0.0), vec3(0.0), 0.0, 1.0),
-        -1.0
-    );
+    return Hit(vec3(0.0), vec3(0.0), -1.0);
+}
+
+fn default_material() -> Material {
+    return Material(vec3(1.0, 0.0, 0.0), vec3(0.0), 0.0, 1.0);
 }
