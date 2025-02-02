@@ -26,7 +26,8 @@ fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
 }
 
 fn main(pos: vec2f) -> vec3f {
-    var ray_dir = ray_direction(pos);
+    let offset = (vec2(rand(), rand()) * 2.0 - 1.0) / vec2f(ctx.window);
+    var ray_dir = ray_direction(pos + offset);
     var ray_origin = ctx.camera.pos;
 
     var color = vec3(0.0);
