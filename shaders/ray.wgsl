@@ -8,11 +8,8 @@ fn hit_sphere(sphere: Sphere, ray: Ray) -> Hit {
 
     let t = h - sqrt(discriminant);
     let position = ray.pos + ray.dir * t;
-    return Hit(
-        position,
-        normalize(position - sphere.position),
-        t
-    );
+    let normal = normalize(position - sphere.position);
+    return Hit(position, normal, t);
 }
 
 fn hit_triangle(triangle: Triangle, ray: Ray) -> Hit {
@@ -29,6 +26,10 @@ fn hit_triangle(triangle: Triangle, ray: Ray) -> Hit {
     let u = dot(edge_ac, dao) * inv_det;
     let v = -dot(edge_ab, dao) * inv_det;
     let w = 1.0 - u - v;
+
+    if det < 1e-6 || dst < 0.0 || u < 0.0 || v < 0.0 || w < 0.0 {
+        return default_hit();
+    }
 
     let hit_pos = ray.pos + ray.dir * dst;
     let hit_normal = normalize(triangle.n0 * w + triangle.n1 * u + triangle.n2 * v);

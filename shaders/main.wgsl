@@ -68,15 +68,15 @@ fn trace_ray(ray: Ray) -> TraceResult {
         }
     }
 
-    // for (var i = 0u; i < arrayLength(&triangles); i++) {
-    //     let triangle = triangles[i];
-    //     let t = hit_triangle(triangle.v0, triangle.v1, triangle.v2, ray_origin, ray_dir);
+    for (var i = 0u; i < arrayLength(&triangles); i++) {
+        let triangle = triangles[i];
+        let result = hit_triangle(triangle, ray);
 
-    //     if t > 0.0 && (t < hit.t || hit.t < 0.0) {
-    //         let position =  ray_origin + ray_dir * t;
-    //         hit = Hit(position, triangle.normal, Material(vec3(1.0, 0.0, 0.0), vec3(0.0), 0.0, 1.0), t);
-    //     }
-    // }
+        if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
+            hit = result;
+            material = default_material();
+        }
+    }
 
     return TraceResult(hit, material);
 }

@@ -59,9 +59,11 @@ pub const DEFAULT_SPHERES: [Sphere; 3] = [
 ];
 
 pub const DEFAULT_TRIANGLES: [Triangle; 1] = [Triangle {
-    v0: Vector3::new(0.0, 0.0, 0.0),
+    v0: Vector3::new(0.0, 1.0, 0.0),
     v1: Vector3::new(0.0, 0.0, -1.0),
     v2: Vector3::new(0.0, 0.0, 1.0),
 
-    normal: Vector3::new(0.0, 1.0, 0.0),
+    n0: Vector3::new(-1.0, 0.0, 0.0),
+    n1: Vector3::new(-1.0, 0.0, 0.0),
+    n2: Vector3::new(-1.0, 0.0, 0.0),
 }];
