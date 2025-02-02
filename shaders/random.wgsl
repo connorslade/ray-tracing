@@ -6,18 +6,13 @@ fn rand() -> f32 {
     return fract(f);
 }
 
-fn rand_normal() -> f32 {
-    let theta = 2.0 * PI * rand();
-    let rho = sqrt(-2.0 * log(rand()));
-    return rho * cos(theta);
-}
-
 fn rand_unit_vector() -> vec3f {
-    return vec3(
-        rand_normal(),
-        rand_normal(),
-        rand_normal()
-    );
+    var z = rand() * 2.0 - 1.0;
+    var a = rand() * 2.0 * PI;
+    var r = sqrt(1.0 - z * z);
+    var x = r * cos(a);
+    var y = r * sin(a);
+    return vec3(x, y, z);
 }
 
 fn rand_hemisphere_vector(normal: vec3f) -> vec3f {
