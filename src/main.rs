@@ -3,19 +3,17 @@ use std::time::Instant;
 use anyhow::{Ok, Result};
 use camera::Camera;
 use compute::{
-    export::{
-        nalgebra::Vector3,
-        wgpu::{include_wgsl, ShaderStages},
-        winit::window::WindowAttributes,
-    },
+    export::{nalgebra::Vector3, wgpu::ShaderStages, winit::window::WindowAttributes},
     gpu::Gpu,
 };
 
 mod app;
 mod camera;
+mod consts;
 mod misc;
 mod types;
 use app::App;
+use consts::SHADER_SOURCE;
 use types::{Material, Sphere, Uniform};
 
 fn main() -> Result<()> {
@@ -44,7 +42,7 @@ fn main() -> Result<()> {
     let spheres = gpu.create_storage_read(&spheres)?;
 
     let pipeline = gpu
-        .render_pipeline(include_wgsl!("shaders/render.wgsl"))
+        .render_pipeline(SHADER_SOURCE)
         .bind_buffer(&uniform, ShaderStages::FRAGMENT)
         .bind_buffer(&spheres, ShaderStages::FRAGMENT)
         .finish();

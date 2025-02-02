@@ -57,7 +57,7 @@ impl Interactive for App {
                 position: Vector3::new(0.0, 0.0, t),
                 radius: 0.5,
                 material: Material {
-                    albedo: Vector3::new(1.0, 1.0, 1.0),
+                    albedo: Vector3::new(0.5, 1.0, 1.0),
                     emission: Vector3::new(0.0, 0.0, 0.0),
                     roughness: 0.0,
                     metallic: 0.0,
@@ -67,7 +67,7 @@ impl Interactive for App {
                 position: Vector3::new(0.0, 0.0, -t),
                 radius: 0.5,
                 material: Material {
-                    albedo: Vector3::new(1.0, 0.0, 0.0),
+                    albedo: Vector3::new(1.0, 0.5, 0.5),
                     emission: Vector3::new(0.0, 0.0, 0.0),
                     roughness: 0.0,
                     metallic: 0.0,
