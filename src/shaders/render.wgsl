@@ -57,20 +57,34 @@ fn vert(
 @fragment
 fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
     let pos = in.uv.xy - 0.5;
-    let ray_dir = ray_direction(pos);
-    let ray_origin = ctx.camera.pos;
+    var ray_dir = ray_direction(pos);
+    var ray_origin = ctx.camera.pos;
 
-    let hit = trace_ray(ray_origin, ray_dir);
-    var color = background_color(ray_dir);
+    var color = vec3(0.0);
+    var throughput = vec3(1.0);
 
-    if (hit.t > 0.0) {
-        color = vec3(max(dot(hit.normal, ctx.light_dir), 0.0));
+    for (var bounce = 0; bounce < 100; bounce++) {
+        let hit = trace_ray(ray_origin, ray_dir);
+
+        if (hit.t < 0.0) {
+            color += throughput * background_color(ray_dir);
+            break;
+        }
+
+        color += throughput * hit.material.emission;
+
+        let scatter_dir = get_scattered_direction(ray_dir, hit);
+        let attenuation = hit.material.albedo;
+
+        ray_origin = hit.position + hit.normal * 1e-4;
+        ray_dir = scatter_dir;
+        throughput *= attenuation;
     }
 
     return vec4(color, 1.0);
 }
 
-// Intersection Tests //
+// Important Functions //
 
 fn trace_ray(ray_origin: vec3f, ray_dir: vec3f) -> Hit {
     var hit = default_hit();
@@ -94,15 +108,20 @@ fn trace_ray(ray_origin: vec3f, ray_dir: vec3f) -> Hit {
     return hit;
 }
 
-fn hit_sphere(center: vec3f, radius: f32, ray_origin: vec3f, ray_dir: vec3f) -> f32 {
-    let oc = ray_origin - center;
-    let a = dot(ray_dir, ray_dir);
-    let b = 2.0 * dot(oc, ray_dir);
-    let c = dot(oc, oc) - radius * radius;
-    let disc = b * b - 4.0 * a * c;
+fn get_scattered_direction(ray_dir: vec3f, hit: Hit) -> vec3f {
+    let specular_dir = reflect(ray_dir, hit.normal);
+    let diffuse_dir = normalize(hit.normal + rand_unit_vector());
+    return mix(specular_dir, diffuse_dir, hit.material.roughness);
+}
 
-    if disc < 0.0 { return -1.0; }
-    return (-b - sqrt(disc)) / (2.0 * a);
+fn hit_sphere(center: vec3f, radius: f32, ray_origin: vec3f, ray_dir: vec3f) -> f32 {
+    let oc = center - ray_origin;
+    let h = dot(ray_dir, oc);
+    let c = dot(oc, oc) - radius * radius;
+    let discriminant = h * h - c;
+
+    if discriminant < 0 { return -1.0; }
+    return (h - sqrt(discriminant));
 }
 
 // Ray Utils //
@@ -143,4 +162,22 @@ fn default_hit() -> Hit {
         Material(vec3(0.0), vec3(0.0), 1.0, 0.0),
         -1.0
     );
+}
+
+// Random //
+
+var<private> seed: u32 = 0u;
+
+fn rand() -> f32 {
+    seed = seed * 747796405u + 2891336453u;
+    let f = f32(seed >> 9u) / f32(1u << 23u);
+    return fract(f);
+}
+
+fn rand_unit_vector() -> vec3f {
+    return normalize(vec3(
+        rand() * 2.0 - 1.0,
+        rand() * 2.0 - 1.0,
+        rand() * 2.0 - 1.0
+    ));
 }
