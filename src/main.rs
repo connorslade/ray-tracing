@@ -53,11 +53,13 @@ fn main() -> Result<()> {
         WindowAttributes::default().with_title("Ray Tracing"),
         App {
             pipeline,
-            uniform,
-            spheres,
+            uniform_buffer: uniform,
+            sphere_buffer: spheres,
 
-            camera: Camera::default(),
-
+            uniform: Uniform {
+                camera: Camera::default(),
+                max_bounces: 100,
+            },
             start: Instant::now(),
         },
     )

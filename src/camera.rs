@@ -35,8 +35,8 @@ impl Camera {
 impl Camera {
     pub fn ui(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
-            ui.label("Position");
             vec3_dragger(ui, &mut self.position, |x| x);
+            ui.label("Position");
         });
         dragger(ui, "Pitch", &mut self.pitch, |x| x);
         dragger(ui, "Yaw", &mut self.yaw, |x| x);

@@ -5,7 +5,7 @@
 
 struct Uniform {
     camera: Camera,
-    light_dir: vec3f
+    max_bounces: u32
 }
 
 struct Camera {
@@ -63,7 +63,7 @@ fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
     var color = vec3(0.0);
     var throughput = vec3(1.0);
 
-    for (var bounce = 0; bounce < 100; bounce++) {
+    for (var bounce = 0u; bounce <= ctx.max_bounces; bounce++) {
         let hit = trace_ray(ray_origin, ray_dir);
 
         if (hit.t < 0.0) {

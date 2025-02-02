@@ -6,7 +6,7 @@ use crate::camera::Camera;
 #[derive(Default, ShaderType)]
 pub struct Uniform {
     pub camera: Camera,
-    pub light_dir: Vector3<f32>,
+    pub max_bounces: u32,
 }
 
 #[derive(ShaderType, Clone, Copy)]
