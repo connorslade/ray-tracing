@@ -4,6 +4,7 @@ use compute::{
         egui::{Context, Window},
         nalgebra::Vector3,
         wgpu::RenderPass,
+        winit::{dpi::PhysicalPosition, window::CursorGrabMode},
     },
     interactive::{GraphicsCtx, Interactive},
     pipeline::render::RenderPipeline,
@@ -20,6 +21,13 @@ pub struct App {
 
 impl Interactive for App {
     fn ui(&mut self, gcx: GraphicsCtx, ctx: &Context) {
+        let window = gcx.window.inner_size();
+        gcx.window.set_cursor_grab(CursorGrabMode::Locked).unwrap();
+        gcx.window
+            .set_cursor_position(PhysicalPosition::new(window.width / 2, window.height / 2))
+            .unwrap();
+        gcx.window.set_cursor_grab(CursorGrabMode::None).unwrap();
+
         self.camera.handle_movement(&gcx, ctx);
         Window::new("Ray Tracing").show(ctx, |ui| {
             ui.collapsing("Camera", |ui| {

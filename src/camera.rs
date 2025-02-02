@@ -53,7 +53,12 @@ impl Camera {
 
         ctx.input(|input| {
             if input.pointer.any_down() && dragging_viewport {
+                let pos = input.pointer.latest_pos().unwrap_or_default() * scale_factor * 2.0;
                 let delta = input.pointer.delta() * scale_factor;
+
+                if pos.x == window.width as f32 || pos.y == window.height as f32 {
+                    return;
+                }
                 let delta = Vector2::new(delta.x, delta.y);
 
                 self.yaw -= delta.x * 0.002;
@@ -65,8 +70,8 @@ impl Camera {
         });
 
         let forward = self.direction();
-        let right = Vector3::new(-forward.z, 0.0, forward.x).normalize();
-        let up = Vector3::y();
+        let right = -Vector3::new(-forward.z, 0.0, forward.x).normalize();
+        let up = -Vector3::y();
 
         let (w, a, s, d, space, shift, ctrl) = ctx.input(|x| {
             (
@@ -86,8 +91,8 @@ impl Camera {
         for (key, dir) in [
             (w, forward),
             (s, -forward),
-            (d, -right),
-            (a, right),
+            (d, right),
+            (a, -right),
             (space, up),
             (shift, -up),
         ] {

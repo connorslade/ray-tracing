@@ -39,11 +39,11 @@ fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
     let ray_origin = ctx.camera.pos;
     let t = hit_sphere(vec3f(0, 0, -2), 0.5, ray_origin, ray_dir);
 
-    var color = vec3(0.0); // Default: background
+    var color = vec3(0.0);
     if (t > 0.0) {
-      let hit_point = ray_origin + t * ray_dir;
-      let normal = normalize(hit_point - vec3(0, 0, -2)); // Sphere center at (0,0,-2)
-      color = vec3(max(dot(normal, ctx.light_dir), 0.0));
+        let hit_point = ray_origin + t * ray_dir;
+        let normal = normalize(hit_point - vec3(0, 0, -2));
+        color = vec3(max(dot(normal, ctx.light_dir), 0.0));
     }
 
     return vec4(color, 1.0);
