@@ -10,15 +10,14 @@ pub struct Bvh {
     pub nodes: Vec<BvhNode>,
 }
 
-#[derive(ShaderType)]
+#[derive(ShaderType, Debug, Default)]
 pub struct BvhNode {
     bounds: BoundingBox,
-
     index: u32,
     face_count: u32,
 }
 
-#[derive(ShaderType)]
+#[derive(ShaderType, Debug, Default)]
 pub struct BoundingBox {
     min: Vector3<f32>,
     max: Vector3<f32>,
@@ -29,7 +28,8 @@ impl Bvh {
         let mut faces = Vec::new();
         let mut nodes = Vec::new();
 
-        let _root = build_bvh(triangles, &mut faces, &mut nodes, 32);
+        nodes.push(BvhNode::default());
+        let _root = build_bvh(0, triangles, &mut faces, &mut nodes, 32);
 
         Self { faces, nodes }
     }
@@ -48,44 +48,36 @@ impl BoundingBox {
 
         Self { min, max }
     }
-
-    fn center(&self) -> Vector3<f32> {
-        (self.min + self.max) / 2.0
-    }
 }
 
 fn build_bvh(
+    parent: usize,
     triangles: &[Triangle],
     faces: &mut Vec<Triangle>,
     nodes: &mut Vec<BvhNode>,
     depth: u32,
-) -> u32 {
+) {
     let bounds = BoundingBox::from_faces(triangles);
 
-    if triangles.len() <= 2 || depth == 0 {
-        let index = faces.len() as u32;
-        let face_count = triangles.len() as u32;
-        faces.extend_from_slice(triangles);
-        let node = BvhNode {
-            bounds,
-            index,
-            face_count,
-        };
-        nodes.push(node);
-        (nodes.len() - 1) as u32
-    } else {
+    let left_child = nodes.len();
+    let parent = &mut nodes[parent];
+    if triangles.len() > 1 && depth > 0 {
+        parent.bounds = bounds;
+        parent.index = left_child as u32;
+        parent.face_count = 0;
+
         let (left_tris, right_tris) = split_triangles(triangles);
 
-        let left_idx = build_bvh(&left_tris, faces, nodes, depth - 1);
-        let _right_idx = build_bvh(&right_tris, faces, nodes, depth - 1);
+        nodes.push(BvhNode::default());
+        nodes.push(BvhNode::default());
 
-        let node = BvhNode {
-            bounds,
-            index: left_idx,
-            face_count: 0,
-        };
-        nodes.push(node);
-        (nodes.len() - 1) as u32
+        build_bvh(left_child, &left_tris, faces, nodes, depth - 1);
+        build_bvh(left_child + 1, &right_tris, faces, nodes, depth - 1);
+    } else {
+        parent.bounds = bounds;
+        parent.index = faces.len() as u32;
+        parent.face_count = triangles.len() as u32;
+        faces.extend_from_slice(triangles);
     }
 }
 

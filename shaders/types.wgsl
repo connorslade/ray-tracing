@@ -49,7 +49,6 @@ struct Triangle {
 
 struct BvhNode {
     bounds: BoundingBox,
-
     index: u32,
     face_count: u32,
 }

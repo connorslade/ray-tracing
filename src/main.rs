@@ -68,10 +68,10 @@ fn main() -> Result<()> {
 
         models.push(Model {
             material: Material {
-                albedo: Vector3::new(1.0, 1.0, 1.0),
+                albedo: Vector3::new(0.5, 1.0, 1.0),
                 emission: Vector3::repeat(0.0),
                 emission_strength: 0.0,
-                roughness: 0.0,
+                roughness: 0.5,
             },
             node_offset,
             face_offset,

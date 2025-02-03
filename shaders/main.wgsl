@@ -86,7 +86,7 @@ fn trace_ray(ray: Ray) -> TraceResult {
             let node = nodes[model.node_offset + stack[pointer]];
 
             let t = hit_bounding_box(node.bounds, ray);
-            if t < 0.0 { break; }
+            if t < 0.0 { continue; }
 
             if node.face_count == 0 {
                 stack[pointer] = node.index;
@@ -95,8 +95,8 @@ fn trace_ray(ray: Ray) -> TraceResult {
                 continue;
             }
 
-            for (var j = 0u; j < node.index; j++) {
-                let triangle = faces[model.face_offset + j];
+            for (var j = 0u; j < node.face_count; j++) {
+                let triangle = faces[model.face_offset + node.index + j];
                 let result = hit_triangle(triangle, ray);
 
                 if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
