@@ -16,6 +16,7 @@ mod camera;
 mod consts;
 mod misc;
 mod types;
+mod ui;
 use app::App;
 use consts::SHADER_SOURCE;
 use tobj::LoadOptions;
@@ -75,11 +76,13 @@ fn main() -> Result<()> {
             .split_ascii_whitespace()
             .map(|x| x.parse::<f32>().unwrap())
             .collect::<Vec<_>>();
+        let emission = Vector3::new(emission[0], emission[1], emission[2]);
 
         models.push(Model {
             material: Material {
                 albedo: Vector3::new(diffuse[0], diffuse[1], diffuse[2]),
-                emission: Vector3::new(emission[0], emission[1], emission[2]),
+                emission_color: emission.try_normalize(0.0).unwrap_or_default(),
+                emission_strength: emission.magnitude(),
                 roughness: 1.0 - shininess,
             },
             node_offset,
@@ -89,7 +92,7 @@ fn main() -> Result<()> {
 
     let sphere_buffer = gpu.create_storage_read(&Vec::new())?;
 
-    let models_buffer = gpu.create_storage_read(&models)?;
+    let model_buffer = gpu.create_storage_read(&models)?;
     let node_buffer = gpu.create_storage_read(&nodes)?;
     let face_buffer = gpu.create_storage_read(&faces)?;
 
@@ -101,7 +104,7 @@ fn main() -> Result<()> {
         .bind_buffer(&uniform_buffer, ShaderStages::FRAGMENT)
         .bind_buffer(&accumulation_buffer, ShaderStages::FRAGMENT)
         .bind_buffer(&sphere_buffer, ShaderStages::FRAGMENT)
-        .bind_buffer(&models_buffer, ShaderStages::FRAGMENT)
+        .bind_buffer(&model_buffer, ShaderStages::FRAGMENT)
         .bind_buffer(&node_buffer, ShaderStages::FRAGMENT)
         .bind_buffer(&face_buffer, ShaderStages::FRAGMENT)
         .finish();
@@ -111,8 +114,10 @@ fn main() -> Result<()> {
         App {
             pipeline,
             uniform_buffer,
-            sphere_buffer,
             accumulation_buffer,
+
+            sphere_buffer,
+            model_buffer,
 
             uniform: Uniform {
                 window: Vector2::zeros(),
@@ -125,6 +130,7 @@ fn main() -> Result<()> {
                 samples: 1,
             },
             spheres: Vec::new(),
+            models,
 
             last_window: Vector2::zeros(),
             accumulate: true,

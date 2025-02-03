@@ -45,7 +45,7 @@ fn main(pos: vec2f) -> vec3f {
         }
 
         let material = trace.material;
-        let emitted = material.emission;
+        let emitted = material.emission_color * material.emission_strength;
         light += emitted * color;
         color *= material.albedo;
 
