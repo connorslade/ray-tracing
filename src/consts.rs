@@ -1,11 +1,6 @@
 use std::borrow::Cow;
 
-use compute::export::{
-    nalgebra::Vector3,
-    wgpu::{ShaderModuleDescriptor, ShaderSource},
-};
-
-use crate::types::{Material, Sphere};
+use compute::export::wgpu::{ShaderModuleDescriptor, ShaderSource};
 
 macro_rules! include_shader {
     ($name:expr) => {
@@ -24,36 +19,3 @@ pub const SHADER_SOURCE: ShaderModuleDescriptor = ShaderModuleDescriptor {
         include_shader!("ray.wgsl"),
     ))),
 };
-
-pub const DEFAULT_SPHERES: [Sphere; 3] = [
-    Sphere {
-        position: Vector3::new(0.0, -0.5, 1.0),
-        radius: 0.5,
-        material: Material {
-            albedo: Vector3::new(1.0, 1.0, 1.0),
-            emission: Vector3::new(0.0, 0.0, 0.0),
-            emission_strength: 0.0,
-            roughness: 0.0,
-        },
-    },
-    Sphere {
-        position: Vector3::new(0.0, -0.5, -1.0),
-        radius: 0.5,
-        material: Material {
-            albedo: Vector3::new(1.0, 0.8, 0.8),
-            emission: Vector3::new(0.0, 0.0, 0.0),
-            emission_strength: 0.0,
-            roughness: 0.1,
-        },
-    },
-    Sphere {
-        position: Vector3::new(0.0, -1001.0, 0.0),
-        radius: 1000.0,
-        material: Material {
-            albedo: Vector3::new(0.8, 0.8, 1.0),
-            emission: Vector3::new(0.0, 0.0, 0.0),
-            emission_strength: 0.0,
-            roughness: 1.0,
-        },
-    },
-];

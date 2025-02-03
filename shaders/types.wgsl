@@ -21,7 +21,6 @@ struct Camera {
 struct Material {
     albedo: vec3f,
     emission: vec3f,
-    emission_strength: f32,
     roughness: f32,
 }
 
@@ -79,5 +78,5 @@ fn default_hit() -> Hit {
 }
 
 fn default_material() -> Material {
-    return Material(vec3(1.0, 1.0, 1.0), vec3(0.0), 0.0, 0.0);
+    return Material(vec3(1.0, 1.0, 1.0), vec3(0.0), 0.0);
 }

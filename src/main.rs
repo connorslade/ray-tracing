@@ -17,21 +17,22 @@ mod consts;
 mod misc;
 mod types;
 use app::App;
-use consts::{DEFAULT_SPHERES, SHADER_SOURCE};
+use consts::SHADER_SOURCE;
 use tobj::LoadOptions;
 use types::{Material, Model, Triangle, Uniform};
 
 fn main() -> Result<()> {
     let gpu = Gpu::init()?;
 
-    let (obj, _materials) = tobj::load_obj(
-        "square.obj",
+    let (obj, materials) = tobj::load_obj(
+        "teapot.obj",
         &LoadOptions {
             triangulate: true,
             single_index: true,
             ..Default::default()
         },
     )?;
+    let materials = materials?;
 
     let mut models = Vec::new();
     let mut faces = Vec::new();
@@ -39,6 +40,7 @@ fn main() -> Result<()> {
 
     for model in obj {
         let mut triangles = Vec::new();
+        let material = &materials[model.mesh.material_id.unwrap()];
 
         for face in model.mesh.indices.chunks_exact(3) {
             let vertex = |idx: u32| {
@@ -66,21 +68,26 @@ fn main() -> Result<()> {
         faces.extend(bvh.faces);
         nodes.extend(bvh.nodes);
 
+        let diffuse = material.diffuse.unwrap();
+        let shininess = material.shininess.unwrap() / 1000.0;
+        let emission = material.unknown_param.get("Ke").unwrap();
+        let emission = emission
+            .split_ascii_whitespace()
+            .map(|x| x.parse::<f32>().unwrap())
+            .collect::<Vec<_>>();
+
         models.push(Model {
             material: Material {
-                albedo: Vector3::new(0.5, 1.0, 1.0),
-                emission: Vector3::repeat(0.0),
-                emission_strength: 0.0,
-                roughness: 0.5,
+                albedo: Vector3::new(diffuse[0], diffuse[1], diffuse[2]),
+                emission: Vector3::new(emission[0], emission[1], emission[2]),
+                roughness: 1.0 - shininess,
             },
             node_offset,
             face_offset,
         });
     }
 
-    let spheres = DEFAULT_SPHERES.to_vec();
-
-    let sphere_buffer = gpu.create_storage_read(&spheres)?;
+    let sphere_buffer = gpu.create_storage_read(&Vec::new())?;
 
     let models_buffer = gpu.create_storage_read(&models)?;
     let node_buffer = gpu.create_storage_read(&nodes)?;
@@ -117,7 +124,7 @@ fn main() -> Result<()> {
                 max_bounces: 100,
                 samples: 1,
             },
-            spheres,
+            spheres: Vec::new(),
 
             last_window: Vector2::zeros(),
             accumulate: true,

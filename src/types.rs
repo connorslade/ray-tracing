@@ -18,11 +18,10 @@ pub struct Uniform {
     pub samples: u32,
 }
 
-#[derive(ShaderType, Default, Clone, Copy, PartialEq)]
+#[derive(ShaderType, Debug, Default, Clone, Copy, PartialEq)]
 pub struct Material {
     pub albedo: Vector3<f32>,
     pub emission: Vector3<f32>,
-    pub emission_strength: f32,
     pub roughness: f32,
 }
 
@@ -56,7 +55,6 @@ impl Hash for Material {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.albedo.map(OrderedFloat).hash(state);
         self.emission.map(OrderedFloat).hash(state);
-        OrderedFloat(self.emission_strength).hash(state);
         OrderedFloat(self.roughness).hash(state);
     }
 }

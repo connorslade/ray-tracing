@@ -94,12 +94,6 @@ impl Interactive for App {
                                 sphere.material.emission =
                                     Vector3::new(color[0], color[1], color[2]);
                                 ui.end_row();
-
-                                ui.label("Emission Strength");
-                                ui.add(
-                                    DragValue::new(&mut sphere.material.emission_strength)
-                                        .speed(0.1),
-                                );
                             });
                         });
                     }

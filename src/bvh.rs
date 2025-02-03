@@ -29,7 +29,7 @@ impl Bvh {
         let mut nodes = Vec::new();
 
         nodes.push(BvhNode::default());
-        let _root = build_bvh(0, triangles, &mut faces, &mut nodes, 32);
+        build_bvh(0, triangles, &mut faces, &mut nodes, 32);
 
         Self { faces, nodes }
     }
