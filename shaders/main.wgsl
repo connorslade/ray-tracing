@@ -1,9 +1,11 @@
 @group(0) @binding(0) var<uniform> ctx: Uniform;
 @group(0) @binding(1) var<storage, read_write> accumulation: array<vec3f>;
 
-@group(0) @binding(2) var<storage, read> models: array<Model>;
-@group(0) @binding(3) var<storage, read> triangles: array<Triangle>;
-@group(0) @binding(4) var<storage, read> spheres: array<Sphere>;
+@group(0) @binding(2) var<storage, read> spheres: array<Sphere>;
+
+@group(0) @binding(3) var<storage, read> models: array<Model>;
+@group(0) @binding(4) var<storage, read> nodes: array<BvhNode>;
+@group(0) @binding(5) var<storage, read> faces: array<Triangle>;
 
 const PI: f32 = 3.141592653589793;
 
@@ -73,13 +75,34 @@ fn trace_ray(ray: Ray) -> TraceResult {
     for (var i = 0u; i < arrayLength(&models); i++) {
         let model = models[i];
 
-        for (var j = model.vertex; j < model.vertex + model.vertex_count; j++) {
-            let triangle = triangles[j];
-            let result = hit_triangle(triangle, ray);
+        var stack = array<u32, 32>();
+        var pointer = 0;
 
-            if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
-                hit = result;
-                material = model.material;;
+        stack[pointer] = 0u;
+        pointer++;
+
+        while pointer > 0 {
+            pointer--;
+            let node = nodes[model.node_offset + stack[pointer]];
+
+            let t = hit_bounding_box(node.bounds, ray);
+            if t < 0.0 { break; }
+
+            if node.face_count == 0 {
+                stack[pointer] = node.index;
+                stack[pointer + 1] = node.index + 1;
+                pointer += 2;
+                continue;
+            }
+
+            for (var j = 0u; j < node.index; j++) {
+                let triangle = faces[model.face_offset + j];
+                let result = hit_triangle(triangle, ray);
+
+                if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
+                    hit = result;
+                    material = model.material;
+                }
             }
         }
     }

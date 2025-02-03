@@ -36,6 +36,21 @@ fn hit_triangle(triangle: Triangle, ray: Ray) -> Hit {
     return Hit(hit_pos, hit_normal, dst);
 }
 
+fn hit_bounding_box(bounds: BoundingBox, ray: Ray) -> f32 {
+    // TODO: Multiply by inverse direction ↓
+    let tmin = (bounds.min - ray.pos) / ray.dir;
+    let tmax = (bounds.max - ray.pos) / ray.dir;
+
+    let t1 = min(tmin, tmax);
+    let t2 = max(tmin, tmax);
+
+    let tnear = max(max(t1.x, t1.y), t1.z);
+    let tfar = min(min(t2.x, t2.y), t2.z);
+
+    if tfar >= tnear && tfar > 0.0 { return tnear; }
+    return -1.0;
+}
+
 fn ray_direction(pos: vec2f) -> vec3f {
     let forward = camera_direction();
     let right = normalize(cross(vec3f(0, 1, 0), forward));

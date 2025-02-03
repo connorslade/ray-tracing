@@ -27,8 +27,8 @@ struct Material {
 
 struct Model {
     material: Material,
-    vertex: u32,
-    vertex_count: u32,
+    node_offset: u32,
+    face_offset: u32,
 }
 
 struct Sphere {
@@ -45,6 +45,18 @@ struct Triangle {
     n0: vec3f,
     n1: vec3f,
     n2: vec3f,
+}
+
+struct BvhNode {
+    bounds: BoundingBox,
+
+    index: u32,
+    face_count: u32,
+}
+
+struct BoundingBox {
+    min: vec3f,
+    max: vec3f,
 }
 
 struct Ray {

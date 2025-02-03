@@ -1,4 +1,5 @@
 use anyhow::{Ok, Result};
+use bvh::Bvh;
 use camera::Camera;
 use compute::{
     export::{
@@ -10,6 +11,7 @@ use compute::{
 };
 
 mod app;
+mod bvh;
 mod camera;
 mod consts;
 mod misc;
@@ -32,10 +34,11 @@ fn main() -> Result<()> {
     )?;
 
     let mut models = Vec::new();
-    let mut triangles = Vec::new();
+    let mut faces = Vec::new();
+    let mut nodes = Vec::new();
 
     for model in obj {
-        let start_idx = triangles.len();
+        let mut triangles = Vec::new();
 
         for face in model.mesh.indices.chunks_exact(3) {
             let vertex = |idx: u32| {
@@ -56,6 +59,13 @@ fn main() -> Result<()> {
             });
         }
 
+        let face_offset = faces.len() as u32;
+        let node_offset = nodes.len() as u32;
+        let bvh = Bvh::from_mesh(&triangles);
+
+        faces.extend(bvh.faces);
+        nodes.extend(bvh.nodes);
+
         models.push(Model {
             material: Material {
                 albedo: Vector3::new(1.0, 1.0, 1.0),
@@ -63,16 +73,18 @@ fn main() -> Result<()> {
                 emission_strength: 0.0,
                 roughness: 0.0,
             },
-            face_index: start_idx as u32,
-            face_count: (triangles.len() - start_idx) as u32,
+            node_offset,
+            face_offset,
         });
     }
 
     let spheres = DEFAULT_SPHERES.to_vec();
 
     let sphere_buffer = gpu.create_storage_read(&spheres)?;
-    let triangle_buffer = gpu.create_storage_read(&triangles)?;
+
     let models_buffer = gpu.create_storage_read(&models)?;
+    let node_buffer = gpu.create_storage_read(&nodes)?;
+    let face_buffer = gpu.create_storage_read(&faces)?;
 
     let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
     let accumulation_buffer = gpu.create_storage::<Vec<Vector3<f32>>>(&vec![])?;
@@ -81,9 +93,10 @@ fn main() -> Result<()> {
         .render_pipeline(SHADER_SOURCE)
         .bind_buffer(&uniform_buffer, ShaderStages::FRAGMENT)
         .bind_buffer(&accumulation_buffer, ShaderStages::FRAGMENT)
-        .bind_buffer(&models_buffer, ShaderStages::FRAGMENT)
-        .bind_buffer(&triangle_buffer, ShaderStages::FRAGMENT)
         .bind_buffer(&sphere_buffer, ShaderStages::FRAGMENT)
+        .bind_buffer(&models_buffer, ShaderStages::FRAGMENT)
+        .bind_buffer(&node_buffer, ShaderStages::FRAGMENT)
+        .bind_buffer(&face_buffer, ShaderStages::FRAGMENT)
         .finish();
 
     gpu.create_window(

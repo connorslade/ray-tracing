@@ -29,8 +29,8 @@ pub struct Material {
 #[derive(ShaderType, Default, Clone, Copy, PartialEq)]
 pub struct Model {
     pub material: Material,
-    pub face_index: u32,
-    pub face_count: u32,
+    pub node_offset: u32,
+    pub face_offset: u32,
 }
 
 #[derive(ShaderType, Default, Copy, Clone, PartialEq)]
@@ -44,6 +44,12 @@ pub struct Sphere {
 pub struct Triangle {
     pub vertices: [Vector3<f32>; 3],
     pub normals: [Vector3<f32>; 3],
+}
+
+impl Triangle {
+    pub fn center(&self) -> Vector3<f32> {
+        self.vertices.iter().sum::<Vector3<_>>() / 2.0
+    }
 }
 
 impl Hash for Material {
