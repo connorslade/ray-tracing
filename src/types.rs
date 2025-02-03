@@ -26,6 +26,13 @@ pub struct Material {
     pub roughness: f32,
 }
 
+#[derive(ShaderType, Default, Clone, Copy, PartialEq)]
+pub struct Model {
+    pub material: Material,
+    pub vertex: u32,
+    pub vertex_count: u32,
+}
+
 #[derive(ShaderType, Default, Copy, Clone, PartialEq)]
 pub struct Sphere {
     pub position: Vector3<f32>,

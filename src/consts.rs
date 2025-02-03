@@ -5,7 +5,7 @@ use compute::export::{
     wgpu::{ShaderModuleDescriptor, ShaderSource},
 };
 
-use crate::types::{Material, Sphere, Triangle};
+use crate::types::{Material, Model, Sphere, Triangle};
 
 macro_rules! include_shader {
     ($name:expr) => {
@@ -63,7 +63,18 @@ pub const DEFAULT_TRIANGLES: [Triangle; 1] = [Triangle {
     v1: Vector3::new(0.0, 0.0, -1.0),
     v2: Vector3::new(0.0, 0.0, 1.0),
 
-    n0: Vector3::new(-1.0, 0.0, 0.0),
+    n0: Vector3::new(-0.5, 0.5, 0.0),
     n1: Vector3::new(-1.0, 0.0, 0.0),
     n2: Vector3::new(-1.0, 0.0, 0.0),
+}];
+
+pub const DEFAULT_MODELS: [Model; 1] = [Model {
+    material: Material {
+        albedo: Vector3::new(0.8, 0.8, 1.0),
+        emission: Vector3::new(0.0, 0.0, 0.0),
+        emission_strength: 0.0,
+        roughness: 1.0,
+    },
+    vertex: 0,
+    vertex_count: 1,
 }];

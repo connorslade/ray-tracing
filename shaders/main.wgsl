@@ -1,7 +1,8 @@
 @group(0) @binding(0) var<uniform> ctx: Uniform;
 @group(0) @binding(1) var<storage, read> spheres: array<Sphere>;
 @group(0) @binding(2) var<storage, read> triangles: array<Triangle>;
-@group(0) @binding(3) var<storage, read_write> accumulation: array<vec3f>;
+@group(0) @binding(3) var<storage, read> models: array<Model>;
+@group(0) @binding(4) var<storage, read_write> accumulation: array<vec3f>;
 
 const PI: f32 = 3.141592653589793;
 
@@ -68,13 +69,17 @@ fn trace_ray(ray: Ray) -> TraceResult {
         }
     }
 
-    for (var i = 0u; i < arrayLength(&triangles); i++) {
-        let triangle = triangles[i];
-        let result = hit_triangle(triangle, ray);
+    for (var i = 0u; i < arrayLength(&models); i++) {
+        let model = models[i];
 
-        if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
-            hit = result;
-            material = default_material();
+        for (var j = model.vertex; j < model.vertex + model.vertex_count; j++) {
+            let triangle = triangles[j];
+            let result = hit_triangle(triangle, ray);
+
+            if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
+                hit = result;
+                material = model.material;;
+            }
         }
     }
 

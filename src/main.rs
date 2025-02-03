@@ -15,7 +15,7 @@ mod consts;
 mod misc;
 mod types;
 use app::App;
-use consts::{DEFAULT_SPHERES, DEFAULT_TRIANGLES, SHADER_SOURCE};
+use consts::{DEFAULT_MODELS, DEFAULT_SPHERES, DEFAULT_TRIANGLES, SHADER_SOURCE};
 use types::Uniform;
 
 fn main() -> Result<()> {
@@ -23,10 +23,13 @@ fn main() -> Result<()> {
 
     let spheres = DEFAULT_SPHERES.to_vec();
     let triangles = DEFAULT_TRIANGLES.to_vec();
+    let models = DEFAULT_MODELS.to_vec();
 
-    let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
     let sphere_buffer = gpu.create_storage_read(&spheres)?;
     let triangle_buffer = gpu.create_storage_read(&triangles)?;
+    let models_buffer = gpu.create_storage_read(&models)?;
+
+    let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
     let accumulation_buffer = gpu.create_storage::<Vec<Vector3<f32>>>(&vec![])?;
 
     let pipeline = gpu
@@ -34,6 +37,7 @@ fn main() -> Result<()> {
         .bind_buffer(&uniform_buffer, ShaderStages::FRAGMENT)
         .bind_buffer(&sphere_buffer, ShaderStages::FRAGMENT)
         .bind_buffer(&triangle_buffer, ShaderStages::FRAGMENT)
+        .bind_buffer(&models_buffer, ShaderStages::FRAGMENT)
         .bind_buffer(&accumulation_buffer, ShaderStages::FRAGMENT)
         .finish();
 

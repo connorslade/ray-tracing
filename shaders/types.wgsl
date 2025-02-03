@@ -25,6 +25,12 @@ struct Material {
     roughness: f32,
 }
 
+struct Model {
+    material: Material,
+    vertex: u32,
+    vertex_count: u32,
+}
+
 struct Sphere {
     position: vec3f,
     radius: f32,
@@ -62,5 +68,5 @@ fn default_hit() -> Hit {
 }
 
 fn default_material() -> Material {
-    return Material(vec3(1.0, 0.0, 0.0), vec3(0.0), 0.0, 1.0);
+    return Material(vec3(1.0, 1.0, 1.0), vec3(0.0), 0.0, 0.0);
 }
