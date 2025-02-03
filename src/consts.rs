@@ -5,7 +5,7 @@ use compute::export::{
     wgpu::{ShaderModuleDescriptor, ShaderSource},
 };
 
-use crate::types::{Material, Model, Sphere, Triangle};
+use crate::types::{Material, Sphere};
 
 macro_rules! include_shader {
     ($name:expr) => {

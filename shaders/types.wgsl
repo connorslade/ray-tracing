@@ -1,10 +1,10 @@
 struct Uniform {
     window: vec2u,
     camera: Camera,
-    exposure: f32,
     frame: u32,
     accumulation_frame: u32,
 
+    enviroment: f32,
     max_bounces: u32,
     samples: u32,
 }

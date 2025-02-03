@@ -12,7 +12,7 @@ use compute::{
 };
 
 use crate::{
-    misc::{dragger, hash, vec3_dragger},
+    misc::{hash, vec3_dragger},
     types::{Sphere, Uniform},
 };
 
@@ -118,7 +118,10 @@ impl Interactive for App {
                     self.uniform.camera.ui(ui);
                 });
 
-                dragger(ui, "Exposure", &mut self.uniform.exposure, |x| x.speed(0.1));
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut self.uniform.environment, 0.0..=1.0));
+                    ui.label("Environment");
+                });
 
                 ui.separator();
 

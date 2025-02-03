@@ -12,4 +12,4 @@ anyhow = "1.0.95"
 encase = { version = "0.10.0", features = ["nalgebra"] }
 ordered-float = "4.6.0"
 plexus = "0.0.11"
-stl_io = "0.8.3"
+tobj = "4.0.3"

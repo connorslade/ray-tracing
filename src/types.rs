@@ -10,10 +10,10 @@ use crate::camera::Camera;
 pub struct Uniform {
     pub window: Vector2<u32>,
     pub camera: Camera,
-    pub exposure: f32,
     pub frame: u32,
     pub accumulation_frame: u32,
 
+    pub environment: f32,
     pub max_bounces: u32,
     pub samples: u32,
 }
@@ -42,13 +42,8 @@ pub struct Sphere {
 
 #[derive(ShaderType, Debug, Default, Copy, Clone, PartialEq)]
 pub struct Triangle {
-    pub v0: Vector3<f32>,
-    pub v1: Vector3<f32>,
-    pub v2: Vector3<f32>,
-
-    pub n0: Vector3<f32>,
-    pub n1: Vector3<f32>,
-    pub n2: Vector3<f32>,
+    pub vertices: [Vector3<f32>; 3],
+    pub normals: [Vector3<f32>; 3],
 }
 
 impl Hash for Material {

@@ -38,7 +38,7 @@ fn main(pos: vec2f) -> vec3f {
         let trace = trace_ray(ray);
 
         if trace.hit.t < 0.0 {
-            light += background_color(ray.dir) * color;
+            light += background_color(ray.dir) * color * ctx.enviroment;
             break;
         }
 

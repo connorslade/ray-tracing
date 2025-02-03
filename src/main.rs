@@ -1,5 +1,3 @@
-use std::fs::File;
-
 use anyhow::{Ok, Result};
 use camera::Camera;
 use compute::{
@@ -18,40 +16,59 @@ mod misc;
 mod types;
 use app::App;
 use consts::{DEFAULT_SPHERES, SHADER_SOURCE};
-use stl_io::Vertex;
+use tobj::LoadOptions;
 use types::{Material, Model, Triangle, Uniform};
 
 fn main() -> Result<()> {
     let gpu = Gpu::init()?;
 
-    let mut mesh_file = File::open("teapot.stl")?;
-    let stl = stl_io::read_stl(&mut mesh_file)?;
+    let (obj, _materials) = tobj::load_obj(
+        "square.obj",
+        &LoadOptions {
+            triangulate: true,
+            single_index: true,
+            ..Default::default()
+        },
+    )?;
+
+    let mut models = Vec::new();
     let mut triangles = Vec::new();
 
-    for face in stl.faces {
-        let map = |x: Vertex| Vector3::new(x[0], x[1], x[2]);
-        triangles.push(Triangle {
-            v0: map(stl.vertices[face.vertices[0]]),
-            v1: map(stl.vertices[face.vertices[1]]),
-            v2: map(stl.vertices[face.vertices[2]]),
+    for model in obj {
+        let start_idx = triangles.len();
 
-            n0: map(face.normal),
-            n1: map(face.normal),
-            n2: map(face.normal),
+        for face in model.mesh.indices.chunks_exact(3) {
+            let vertex = |idx: u32| {
+                let start = idx as usize * 3;
+                let positions = &model.mesh.positions;
+                Vector3::new(positions[start], positions[start + 1], positions[start + 2])
+            };
+
+            let normal = |idx: u32| {
+                let start = idx as usize * 3;
+                let normals = &model.mesh.normals;
+                Vector3::new(normals[start], normals[start + 1], normals[start + 2])
+            };
+
+            triangles.push(Triangle {
+                vertices: [vertex(face[0]), vertex(face[1]), vertex(face[2])],
+                normals: [normal(face[0]), normal(face[1]), normal(face[2])],
+            });
+        }
+
+        models.push(Model {
+            material: Material {
+                albedo: Vector3::new(1.0, 1.0, 1.0),
+                emission: Vector3::repeat(0.0),
+                emission_strength: 0.0,
+                roughness: 0.0,
+            },
+            face_index: start_idx as u32,
+            face_count: (triangles.len() - start_idx) as u32,
         });
     }
 
     let spheres = DEFAULT_SPHERES.to_vec();
-    let models = vec![Model {
-        material: Material {
-            albedo: Vector3::new(1.0, 0.0, 0.0),
-            emission: Vector3::new(0.0, 0.0, 0.0),
-            emission_strength: 0.0,
-            roughness: 1.0,
-        },
-        face_index: 0,
-        face_count: 20,
-    }];
 
     let sphere_buffer = gpu.create_storage_read(&spheres)?;
     let triangle_buffer = gpu.create_storage_read(&triangles)?;
@@ -80,10 +97,10 @@ fn main() -> Result<()> {
             uniform: Uniform {
                 window: Vector2::zeros(),
                 camera: Camera::default(),
-                exposure: 1.0,
                 frame: 0,
                 accumulation_frame: 1,
 
+                environment: 1.0,
                 max_bounces: 100,
                 samples: 1,
             },
