@@ -274,6 +274,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "byteorder"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
+
+[[package]]
 name = "bytes"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -726,6 +732,15 @@ dependencies = [
  "quote 1.0.38",
  "syn 1.0.109",
  "synstructure 0.12.6",
+]
+
+[[package]]
+name = "float-cmp"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -2096,6 +2111,7 @@ dependencies = [
  "encase",
  "ordered-float",
  "plexus",
+ "stl_io",
 ]
 
 [[package]]
@@ -2342,6 +2358,16 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
+name = "stl_io"
+version = "0.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f985fe7ba9bd93bb8f0158689a0601d4bc5480a7df11c6f22c220fa1bedaefe7"
+dependencies = [
+ "byteorder",
+ "float-cmp",
+]
 
 [[package]]
 name = "strict-num"

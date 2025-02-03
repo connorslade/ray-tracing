@@ -29,8 +29,8 @@ pub struct Material {
 #[derive(ShaderType, Default, Clone, Copy, PartialEq)]
 pub struct Model {
     pub material: Material,
-    pub vertex: u32,
-    pub vertex_count: u32,
+    pub face_index: u32,
+    pub face_count: u32,
 }
 
 #[derive(ShaderType, Default, Copy, Clone, PartialEq)]
@@ -40,7 +40,7 @@ pub struct Sphere {
     pub material: Material,
 }
 
-#[derive(ShaderType, Default, Copy, Clone, PartialEq)]
+#[derive(ShaderType, Debug, Default, Copy, Clone, PartialEq)]
 pub struct Triangle {
     pub v0: Vector3<f32>,
     pub v1: Vector3<f32>,
