@@ -71,6 +71,12 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
                         .unwrap();
                 });
             }
+
+            if ui.button("Render").clicked() {
+                let window = gcx.window.inner_size();
+                app.compute_pipeline
+                    .dispatch(Vector3::new(window.width / 8, window.height / 8, 1));
+            }
         });
 
     if hash(&app.uniform.camera) != old_camera {

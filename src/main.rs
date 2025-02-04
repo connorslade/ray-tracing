@@ -20,7 +20,7 @@ mod scene;
 mod types;
 mod ui;
 use app::App;
-use consts::SHADER_SOURCE;
+use consts::{COMPUTE_SOURCE, RENDER_SOURCE};
 use scene::Scene;
 use types::Uniform;
 
@@ -28,7 +28,7 @@ fn main() -> Result<()> {
     let gpu = Gpu::init()?;
 
     let mut scene = Scene::empty();
-    scene.load("scenes/teapot-circle.obj")?;
+    scene.load("scenes/cornell-box.obj")?;
 
     let sphere_buffer = gpu.create_storage_read(&Vec::new())?;
     let (model_buffer, node_buffer, face_buffer) = scene.create_buffers(&gpu)?;
@@ -36,20 +36,27 @@ fn main() -> Result<()> {
     let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
     let accumulation_buffer = gpu.create_storage::<Vec<Vector3<f32>>>(&vec![])?;
 
-    let pipeline = gpu
-        .render_pipeline(SHADER_SOURCE)
+    let compute_pipeline = gpu
+        .compute_pipeline(COMPUTE_SOURCE)
+        .bind_buffer(&uniform_buffer)
+        .bind_buffer(&accumulation_buffer)
+        .bind_buffer(&sphere_buffer)
+        .bind_buffer(&model_buffer)
+        .bind_buffer(&node_buffer)
+        .bind_buffer(&face_buffer)
+        .finish();
+    let render_pipeline = gpu
+        .render_pipeline(RENDER_SOURCE)
         .bind_buffer(&uniform_buffer, ShaderStages::FRAGMENT)
         .bind_buffer(&accumulation_buffer, ShaderStages::FRAGMENT)
-        .bind_buffer(&sphere_buffer, ShaderStages::FRAGMENT)
-        .bind_buffer(&model_buffer, ShaderStages::FRAGMENT)
-        .bind_buffer(&node_buffer, ShaderStages::FRAGMENT)
-        .bind_buffer(&face_buffer, ShaderStages::FRAGMENT)
         .finish();
 
     gpu.create_window(
         WindowAttributes::default().with_title("Ray Tracing"),
         App {
-            pipeline,
+            compute_pipeline,
+            render_pipeline,
+
             uniform_buffer,
             accumulation_buffer,
 

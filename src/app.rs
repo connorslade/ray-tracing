@@ -9,7 +9,7 @@ use compute::{
     },
     interactive::{GraphicsCtx, Interactive},
     misc::mutability::Mutable,
-    pipeline::render::RenderPipeline,
+    pipeline::{compute::ComputePipeline, render::RenderPipeline},
 };
 
 use crate::{
@@ -18,7 +18,9 @@ use crate::{
 };
 
 pub struct App {
-    pub pipeline: RenderPipeline,
+    pub compute_pipeline: ComputePipeline,
+    pub render_pipeline: RenderPipeline,
+
     pub uniform_buffer: UniformBuffer<Uniform>,
     pub accumulation_buffer: StorageBuffer<Vec<Vector3<f32>>, Mutable>,
 
@@ -75,6 +77,9 @@ impl Interactive for App {
         self.uniform.frame += 1;
         self.uniform_buffer.upload(&self.uniform).unwrap();
 
-        self.pipeline.draw_quad(render_pass, 0..1);
+        self.render_pipeline.draw_quad(render_pass, 0..1);
+
+        self.compute_pipeline
+            .dispatch(Vector3::new(window.x / 8, window.y / 8, 1));
     }
 }

@@ -9,27 +9,26 @@
 
 const PI: f32 = 3.141592653589793;
 
-@fragment
-fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
-    let pixel = vec2u(vec2f( in.uv.x, 1.0 -in.uv.y) * vec2f(ctx.window));
-    let pixel_idx = pixel.y * ctx.window.x + pixel.x;
-    let pos = in.uv.xy - 0.5;
+@compute
+@workgroup_size(8, 8, 1)
+fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+    let pixel_idx = global_id.y * ctx.window.x + global_id.x;
+    let uv = vec2f(global_id.xy) / vec2f(ctx.window);
+    let pos = vec2f(uv.x, 1.0 - uv.y) - 0.5;
 
     seed = (pixel_idx * 2479898233) ^ (ctx.frame * 98379842);
 
     var color = vec3(0.0);
     for (var i = 0u; i < ctx.samples; i++) {
-        color += main(pos);
+        color += sample(pos);
     }
     color /= f32(ctx.samples);
 
     let out = mix(accumulation[pixel_idx], color, 1.0 / f32(ctx.accumulation_frame));
-    accumulation[pixel_idx] = out;
-
-    return vec4(out, 1.0);
+    accumulation[pixel_idx] = color;
 }
 
-fn main(pos: vec2f) -> vec3f {
+fn sample(pos: vec2f) -> vec3f {
     let offset = (vec2(rand(), rand()) * 2.0 - 1.0) / vec2f(ctx.window);
     let dir = ray_direction(pos + offset);
     var ray = Ray(ctx.camera.pos, dir, 1.0 / dir);
