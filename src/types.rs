@@ -20,10 +20,14 @@ pub struct Uniform {
 
 #[derive(ShaderType, Debug, Default, Clone, Copy, PartialEq)]
 pub struct Material {
-    pub albedo: Vector3<f32>,
+    pub diffuse_color: Vector3<f32>,
+    pub specular_color: Vector3<f32>,
+
+    pub specular_probability: f32,
+    pub roughness: f32,
+
     pub emission_color: Vector3<f32>,
     pub emission_strength: f32,
-    pub roughness: f32,
 }
 
 #[derive(ShaderType, Default, Clone, Copy, PartialEq)]
@@ -54,10 +58,12 @@ impl Triangle {
 
 impl Hash for Material {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.albedo.map(OrderedFloat).hash(state);
+        self.diffuse_color.map(OrderedFloat).hash(state);
+        self.specular_color.map(OrderedFloat).hash(state);
         self.emission_color.map(OrderedFloat).hash(state);
         OrderedFloat(self.emission_strength).hash(state);
         OrderedFloat(self.roughness).hash(state);
+        OrderedFloat(self.specular_probability).hash(state);
     }
 }
 

@@ -62,10 +62,17 @@ fn ray_direction(pos: vec2f) -> vec3f {
     return normalize(forward + right * uv.x + up * uv.y);
 }
 
-fn get_scattered_direction(ray: Ray, trace: TraceResult) -> vec3f {
-    let specular_dir = reflect(ray.dir, trace.hit.normal);
-    let diffuse_dir = rand_hemisphere_vector(trace.hit.normal);
-    return mix(specular_dir, diffuse_dir, trace.material.roughness);
+fn get_scattered_direction(ray: Ray, trace: TraceResult) -> ScatterResult {
+    let is_specular = f32(rand() < trace.material.specular_probability);
+    let smoothness = 1.0 - trace.material.roughness;
+
+    let diffuse = rand_hemisphere_vector(trace.hit.normal);
+    let specular = reflect(ray.dir, trace.hit.normal);
+
+    return ScatterResult(
+        mix(diffuse, specular, smoothness * is_specular),
+        mix(trace.material.diffuse_color, trace.material.specular_color, is_specular)
+    );
 }
 
 fn camera_direction() -> vec3f {

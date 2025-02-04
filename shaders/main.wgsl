@@ -40,18 +40,21 @@ fn main(pos: vec2f) -> vec3f {
         let trace = trace_ray(ray);
 
         if trace.hit.t < 0.0 {
-            light += background_color(ray.dir) * color * ctx.enviroment;
+            // light += background_color(ray.dir) * color * ctx.enviroment;
+            light += vec3(0.1) * color * ctx.enviroment;
             break;
         }
 
         let material = trace.material;
         let emitted = material.emission_color * material.emission_strength;
+
+        let scatter = get_scattered_direction(ray, trace);
         light += emitted * color;
-        color *= material.albedo;
+        color *= scatter.color;
 
         ray = Ray(
-            trace.hit.position,
-            get_scattered_direction(ray, trace)
+            trace.hit.position + trace.hit.normal * 0.0001,
+            scatter.direction
         );
     }
 

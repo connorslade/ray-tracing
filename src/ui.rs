@@ -114,18 +114,26 @@ fn material_settings(ui: &mut Ui, material: &mut Material) {
             ui.add(Slider::new(&mut material.roughness, 0.0..=1.0));
             ui.end_row();
 
-            let albedo = material.albedo;
-            let mut color = [albedo.x, albedo.y, albedo.z];
-            ui.label("Albedo");
-            ui.color_edit_button_rgb(&mut color);
-            material.albedo = Vector3::new(color[0], color[1], color[2]);
+            ui.label("Specular Probability");
+            ui.add(Slider::new(&mut material.specular_probability, 0.0..=1.0));
             ui.end_row();
 
-            let mut color = [
-                material.emission_color.x,
-                material.emission_color.y,
-                material.emission_color.z,
-            ];
+            ui.label("Diffuse Color");
+            let diffuse_color = material.diffuse_color;
+            let mut color = [diffuse_color.x, diffuse_color.y, diffuse_color.z];
+            ui.color_edit_button_rgb(&mut color);
+            material.diffuse_color = Vector3::new(color[0], color[1], color[2]);
+            ui.end_row();
+
+            ui.label("Specular Color");
+            let specular_color = material.specular_color;
+            let mut color = [specular_color.x, specular_color.y, specular_color.z];
+            ui.color_edit_button_rgb(&mut color);
+            material.specular_color = Vector3::new(color[0], color[1], color[2]);
+            ui.end_row();
+
+            let emission_color = material.emission_color;
+            let mut color = [emission_color.x, emission_color.y, emission_color.z];
 
             ui.label("Emission");
             ui.horizontal(|ui| {

@@ -112,7 +112,7 @@ impl Camera {
 impl Default for Camera {
     fn default() -> Self {
         Self {
-            position: Vector3::zeros(),
+            position: Vector3::new(1.0, 1.0, 1.0),
             pitch: 0.0,
             yaw: 0.0,
 

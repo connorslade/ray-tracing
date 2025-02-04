@@ -70,6 +70,7 @@ fn main() -> Result<()> {
         nodes.extend(bvh.nodes);
 
         let diffuse = material.diffuse.unwrap();
+        let specular = material.specular.unwrap();
         let shininess = material.shininess.unwrap() / 1000.0;
         let emission = material.unknown_param.get("Ke").unwrap();
         let emission = emission
@@ -80,10 +81,14 @@ fn main() -> Result<()> {
 
         models.push(Model {
             material: Material {
-                albedo: Vector3::new(diffuse[0], diffuse[1], diffuse[2]),
+                diffuse_color: Vector3::new(diffuse[0], diffuse[1], diffuse[2]),
+                specular_color: Vector3::new(specular[0], specular[1], specular[2]),
+
+                specular_probability: shininess,
+                roughness: 1.0,
+
                 emission_color: emission.try_normalize(0.0).unwrap_or_default(),
                 emission_strength: emission.magnitude(),
-                roughness: 1.0 - shininess,
             },
             node_offset,
             face_offset,

@@ -19,10 +19,14 @@ struct Camera {
 }
 
 struct Material {
-    albedo: vec3f,
+    diffuse_color: vec3f,
+    specular_color: vec3f,
+
+    specular_probability: f32,
+    roughness: f32,
+
     emission_color: vec3f,
     emission_strength: f32,
-    roughness: f32,
 }
 
 struct Model {
@@ -74,10 +78,15 @@ struct TraceResult {
     material: Material
 }
 
+struct ScatterResult {
+    direction: vec3f,
+    color: vec3f
+}
+
 fn default_hit() -> Hit {
     return Hit(vec3(0.0), vec3(0.0), -1.0);
 }
 
 fn default_material() -> Material {
-    return Material(vec3(1.0, 1.0, 1.0), vec3(0.0), 0.0, 0.0);
+    return Material(vec3(1.0), vec3(0.0), 0.0, 0.0, vec3(0.0), 0.0);
 }
