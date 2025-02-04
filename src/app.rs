@@ -8,12 +8,12 @@ use compute::{
         wgpu::RenderPass,
     },
     interactive::{GraphicsCtx, Interactive},
-    misc::mutability::{Immutable, Mutable},
+    misc::mutability::Mutable,
     pipeline::render::RenderPipeline,
 };
 
 use crate::{
-    types::{GpuModel, Model, Sphere, Uniform},
+    types::{Model, ModelBuffer, Sphere, SphereBuffer, Uniform},
     ui::ui,
 };
 
@@ -22,8 +22,8 @@ pub struct App {
     pub uniform_buffer: UniformBuffer<Uniform>,
     pub accumulation_buffer: StorageBuffer<Vec<Vector3<f32>>, Mutable>,
 
-    pub sphere_buffer: StorageBuffer<Vec<Sphere>, Immutable>,
-    pub model_buffer: StorageBuffer<Vec<GpuModel>, Immutable>,
+    pub sphere_buffer: SphereBuffer,
+    pub model_buffer: ModelBuffer,
 
     pub uniform: Uniform,
     pub spheres: Vec<Sphere>,

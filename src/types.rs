@@ -1,10 +1,19 @@
 use std::hash::{Hash, Hasher};
 
-use compute::export::nalgebra::{Matrix4, Vector2, Vector3};
+use compute::{
+    buffer::StorageBuffer,
+    export::nalgebra::{Matrix4, Vector2, Vector3},
+    misc::mutability::Immutable,
+};
 use encase::ShaderType;
 use ordered_float::OrderedFloat;
 
-use crate::camera::Camera;
+use crate::{bvh::BvhNode, camera::Camera};
+
+pub type ModelBuffer = StorageBuffer<Vec<GpuModel>, Immutable>;
+pub type NodeBuffer = StorageBuffer<Vec<BvhNode>, Immutable>;
+pub type FaceBuffer = StorageBuffer<Vec<Triangle>, Immutable>;
+pub type SphereBuffer = StorageBuffer<Vec<Sphere>, Immutable>;
 
 #[derive(Default, ShaderType)]
 pub struct Uniform {
