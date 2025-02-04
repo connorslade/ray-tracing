@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use compute::{
     buffer::{StorageBuffer, UniformBuffer},
     export::{
@@ -27,6 +29,7 @@ pub struct App {
     pub spheres: Vec<Sphere>,
     pub models: Vec<Model>,
 
+    pub last_frame: Instant,
     pub last_window: Vector2<u32>,
     pub accumulate: bool,
 }

@@ -37,9 +37,8 @@ fn hit_triangle(triangle: Triangle, ray: Ray) -> Hit {
 }
 
 fn hit_bounding_box(bounds: BoundingBox, ray: Ray) -> f32 {
-    // TODO: Multiply by inverse direction ↓
-    let tmin = (bounds.min - ray.pos) / ray.dir;
-    let tmax = (bounds.max - ray.pos) / ray.dir;
+    let tmin = (bounds.min - ray.pos) * ray.inv_dir;
+    let tmax = (bounds.max - ray.pos) * ray.inv_dir;
 
     let t1 = min(tmin, tmax);
     let t2 = max(tmin, tmax);

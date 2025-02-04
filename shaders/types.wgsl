@@ -64,7 +64,8 @@ struct BoundingBox {
 
 struct Ray {
     pos: vec3f,
-    dir: vec3f
+    dir: vec3f,
+    inv_dir: vec3f
 }
 
 struct Hit {

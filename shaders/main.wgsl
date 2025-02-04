@@ -31,12 +31,13 @@ fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
 
 fn main(pos: vec2f) -> vec3f {
     let offset = (vec2(rand(), rand()) * 2.0 - 1.0) / vec2f(ctx.window);
-    var ray = Ray(ctx.camera.pos, ray_direction(pos + offset));
+    let dir = ray_direction(pos + offset);
+    var ray = Ray(ctx.camera.pos, dir, 1.0 / dir);
 
     var light = vec3(0.0);
     var color = vec3(1.0);
 
-    for (var bounce = 0u; bounce <= ctx.max_bounces; bounce++) {
+    for (var bounce = 0u; bounce < ctx.max_bounces; bounce++) {
         let trace = trace_ray(ray);
 
         if trace.hit.t < 0.0 {
@@ -45,8 +46,7 @@ fn main(pos: vec2f) -> vec3f {
             break;
         }
 
-        let material = trace.material;
-        let emitted = material.emission_color * material.emission_strength;
+        let emitted = trace.material.emission_color * trace.material.emission_strength;
 
         let scatter = get_scattered_direction(ray, trace);
         light += emitted * color;
@@ -54,7 +54,8 @@ fn main(pos: vec2f) -> vec3f {
 
         ray = Ray(
             trace.hit.position + trace.hit.normal * 0.0001,
-            scatter.direction
+            scatter.direction,
+            1.0 / scatter.direction
         );
     }
 
@@ -75,36 +76,37 @@ fn trace_ray(ray: Ray) -> TraceResult {
         }
     }
 
+    var stack = array<u32, 32>();
+    var pointer = 0;
+
     for (var i = 0u; i < arrayLength(&models); i++) {
         let model = models[i];
 
-        var stack = array<u32, 32>();
-        var pointer = 0;
-
-        stack[pointer] = 0u;
-        pointer++;
+        stack[0] = 0u;
+        pointer = 1;
 
         while pointer > 0 {
             pointer--;
             let node = nodes[model.node_offset + stack[pointer]];
 
-            let t = hit_bounding_box(node.bounds, ray);
-            if t < 0.0 { continue; }
-
             if node.face_count == 0 {
-                stack[pointer] = node.index;
-                stack[pointer + 1] = node.index + 1;
-                pointer += 2;
-                continue;
-            }
+                let left = nodes[model.node_offset + node.index];
+                let right = nodes[model.node_offset + node.index + 1];
 
-            for (var j = 0u; j < node.face_count; j++) {
-                let triangle = faces[model.face_offset + node.index + j];
-                let result = hit_triangle(triangle, ray);
+                let left_dist = hit_bounding_box(left.bounds, ray);
+                let right_dist = hit_bounding_box(right.bounds, ray);
 
-                if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
-                    hit = result;
-                    material = model.material;
+                if left_dist > 0.0 && (left_dist < hit.t || hit.t < 0.0) { stack[pointer] = node.index; pointer++; }
+                if right_dist > 0.0 && (right_dist < hit.t || hit.t < 0.0) { stack[pointer] = node.index + 1; pointer++; }
+            } else {
+                for (var j = 0u; j < node.face_count; j++) {
+                    let triangle = faces[model.face_offset + node.index + j];
+                    let result = hit_triangle(triangle, ray);
+
+                    if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
+                        hit = result;
+                        material = model.material;
+                    }
                 }
             }
         }

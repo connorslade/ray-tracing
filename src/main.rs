@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use anyhow::{Ok, Result};
 use bvh::Bvh;
 use camera::Camera;
@@ -26,7 +28,7 @@ fn main() -> Result<()> {
     let gpu = Gpu::init()?;
 
     let (obj, materials) = tobj::load_obj(
-        "scenes/cornell-box.obj",
+        "scenes/teapot-circle.obj",
         &LoadOptions {
             triangulate: true,
             single_index: true,
@@ -40,7 +42,7 @@ fn main() -> Result<()> {
     let mut nodes = Vec::new();
 
     for model in obj {
-        println!("Loading {}", model.name);
+        println!("Loading `{}`", model.name);
 
         let mut triangles = Vec::new();
         let material = &materials[model.mesh.material_id.unwrap()];
@@ -133,12 +135,13 @@ fn main() -> Result<()> {
                 accumulation_frame: 1,
 
                 environment: 1.0,
-                max_bounces: 100,
+                max_bounces: 20,
                 samples: 1,
             },
             spheres: Vec::new(),
             models,
 
+            last_frame: Instant::now(),
             last_window: Vector2::zeros(),
             accumulate: true,
         },

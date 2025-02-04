@@ -93,12 +93,10 @@ fn split_triangles(triangles: &[Triangle]) -> (Vec<Triangle>, Vec<Triangle>) {
         2
     };
 
-    let mut sorted_triangles = triangles.to_vec();
-    sorted_triangles.sort_by(|a, b| a.center()[axis].partial_cmp(&b.center()[axis]).unwrap());
+    let mut left = triangles.to_vec();
+    left.sort_by(|a, b| a.center()[axis].partial_cmp(&b.center()[axis]).unwrap());
 
-    let mid = sorted_triangles.len() / 2;
-    let left = sorted_triangles[..mid].to_vec();
-    let right = sorted_triangles[mid..].to_vec();
-
+    let mid = left.len() / 2;
+    let right = left.split_off(mid);
     (left, right)
 }

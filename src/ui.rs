@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use compute::{
     export::{
         egui::{Context, DragValue, Grid, Slider, Ui, Window},
@@ -19,6 +21,13 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
     Window::new("Ray Tracing")
         .default_width(0.0)
         .show(ctx, |ui| {
+            ui.label(format!(
+                "FPS: {}",
+                app.last_frame.elapsed().as_secs_f32().recip()
+            ));
+            app.last_frame = Instant::now();
+            ui.separator();
+
             ui.collapsing("Rendering", |ui| {
                 ui.horizontal(|ui| {
                     ui.add(Slider::new(&mut app.uniform.samples, 1..=20));
@@ -26,7 +35,7 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
                 });
 
                 ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut app.uniform.max_bounces, 1..=100));
+                    ui.add(Slider::new(&mut app.uniform.max_bounces, 2..=100));
                     ui.label("Max Bounces");
                 });
 
