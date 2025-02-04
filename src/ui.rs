@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{fs::File, time::Instant};
 
 use compute::{
     export::{
@@ -7,6 +7,7 @@ use compute::{
     },
     interactive::GraphicsCtx,
 };
+use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
 
 use crate::{
     app::App,
@@ -52,6 +53,24 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
             ui.collapsing("Spheres", |ui| sphere_settings(app, ui));
             ui.collapsing("Models", |ui| model_settings(app, ui));
             ui.collapsing("Camera", |ui| app.uniform.camera.ui(ui));
+
+            ui.separator();
+
+            if ui.button("Capture").clicked() {
+                let window = gcx.window.inner_size();
+                app.accumulation_buffer.download_async(move |data| {
+                    let encoder = PngEncoder::new(File::create("out.png").unwrap());
+                    let data = data
+                        .iter()
+                        .map(|x| (x * 255.0).map(|x| x as u8))
+                        .flat_map(|x| [x.x, x.y, x.z])
+                        .collect::<Vec<_>>();
+
+                    encoder
+                        .write_image(&data, window.width, window.height, ExtendedColorType::Rgb8)
+                        .unwrap();
+                });
+            }
         });
 
     if hash(&app.uniform.camera) != old_camera {

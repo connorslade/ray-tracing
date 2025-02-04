@@ -11,7 +11,7 @@ const PI: f32 = 3.141592653589793;
 
 @fragment
 fn frag(in: VertexOutput) -> @location(0) vec4<f32> {
-    let pixel = vec2u(in.uv * vec2f(ctx.window));
+    let pixel = vec2u(vec2f( in.uv.x, 1.0 -in.uv.y) * vec2f(ctx.window));
     let pixel_idx = pixel.y * ctx.window.x + pixel.x;
     let pos = in.uv.xy - 0.5;
 
@@ -42,7 +42,7 @@ fn main(pos: vec2f) -> vec3f {
 
         if trace.hit.t < 0.0 {
             // light += background_color(ray.dir) * color * ctx.enviroment;
-            light += vec3(0.1) * color * ctx.enviroment;
+            light += vec3(0.3) * color * ctx.enviroment;
             break;
         }
 
