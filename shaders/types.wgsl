@@ -33,6 +33,9 @@ struct Model {
     material: Material,
     node_offset: u32,
     face_offset: u32,
+
+    transformation: mat4x4f,
+    inv_transformation: mat4x4f
 }
 
 struct Sphere {

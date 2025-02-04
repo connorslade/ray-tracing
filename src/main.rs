@@ -84,6 +84,7 @@ fn main() -> Result<()> {
         let emission = Vector3::new(emission[0], emission[1], emission[2]);
 
         models.push(Model {
+            name: model.name,
             material: Material {
                 diffuse_color: Vector3::new(diffuse[0], diffuse[1], diffuse[2]),
                 specular_color: Vector3::new(specular[0], specular[1], specular[2]),
@@ -96,12 +97,16 @@ fn main() -> Result<()> {
             },
             node_offset,
             face_offset,
+
+            position: Vector3::zeros(),
+            scale: Vector3::repeat(1.0),
         });
     }
 
+    // todo: function to create empty buffers
     let sphere_buffer = gpu.create_storage_read(&Vec::new())?;
 
-    let model_buffer = gpu.create_storage_read(&models)?;
+    let model_buffer = gpu.create_storage_read(&Vec::new())?;
     let node_buffer = gpu.create_storage_read(&nodes)?;
     let face_buffer = gpu.create_storage_read(&faces)?;
 

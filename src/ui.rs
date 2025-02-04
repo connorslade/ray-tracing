@@ -101,17 +101,28 @@ fn sphere_settings(app: &mut App, ui: &mut Ui) {
 }
 
 fn model_settings(app: &mut App, ui: &mut Ui) {
-    let old_spheres = hash(&app.models);
-    for (i, model) in app.models.iter_mut().enumerate() {
-        let heading = format!("Model #{}", i + 1);
-        ui.collapsing(&heading, |ui| {
+    let old_models = hash(&app.models);
+    for model in app.models.iter_mut() {
+        ui.collapsing(&model.name, |ui| {
+            Grid::new(&model.name).num_columns(2).show(ui, |ui| {
+                ui.label("Position");
+                vec3_dragger(ui, &mut model.position, |x| x.speed(0.01));
+                ui.end_row();
+
+                ui.label("Scale");
+                vec3_dragger(ui, &mut model.scale, |x| x.speed(0.01));
+                ui.end_row();
+            });
+
+            ui.separator();
+
             material_settings(ui, &mut model.material);
         });
     }
 
-    if hash(&app.spheres) != old_spheres {
+    if hash(&app.models) != old_models {
         app.invalidate_accumulation();
-        app.model_buffer.upload_shrink(&app.models).unwrap();
+        app.upload_models();
     }
 }
 

@@ -13,7 +13,7 @@ use compute::{
 };
 
 use crate::{
-    types::{Model, Sphere, Uniform},
+    types::{GpuModel, Model, Sphere, Uniform},
     ui::ui,
 };
 
@@ -23,7 +23,7 @@ pub struct App {
     pub accumulation_buffer: StorageBuffer<Vec<Vector3<f32>>, Mutable>,
 
     pub sphere_buffer: StorageBuffer<Vec<Sphere>, Immutable>,
-    pub model_buffer: StorageBuffer<Vec<Model>, Immutable>,
+    pub model_buffer: StorageBuffer<Vec<GpuModel>, Immutable>,
 
     pub uniform: Uniform,
     pub spheres: Vec<Sphere>,
@@ -38,9 +38,18 @@ impl App {
     pub fn invalidate_accumulation(&mut self) {
         self.uniform.accumulation_frame = 1;
     }
+
+    pub fn upload_models(&self) {
+        let gpu_models = self.models.iter().map(|x| x.to_gpu()).collect::<Vec<_>>();
+        self.model_buffer.upload_shrink(&gpu_models).unwrap();
+    }
 }
 
 impl Interactive for App {
+    fn init(&mut self, _gcx: GraphicsCtx) {
+        self.upload_models();
+    }
+
     fn ui(&mut self, gcx: GraphicsCtx, ctx: &Context) {
         ui(self, gcx, ctx);
     }

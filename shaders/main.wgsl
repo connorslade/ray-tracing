@@ -82,6 +82,10 @@ fn trace_ray(ray: Ray) -> TraceResult {
     for (var i = 0u; i < arrayLength(&models); i++) {
         let model = models[i];
 
+        let model_pos = (model.inv_transformation * vec4(ray.pos, 1.0)).xyz;
+        let model_dir = (model.inv_transformation * vec4(ray.dir, 0.0)).xyz;
+        let model_ray = Ray(model_pos, model_dir, 1.0 / model_dir);
+
         stack[0] = 0u;
         pointer = 1;
 
@@ -93,18 +97,19 @@ fn trace_ray(ray: Ray) -> TraceResult {
                 let left = nodes[model.node_offset + node.index];
                 let right = nodes[model.node_offset + node.index + 1];
 
-                let left_dist = hit_bounding_box(left.bounds, ray);
-                let right_dist = hit_bounding_box(right.bounds, ray);
+                let left_dist = hit_bounding_box(left.bounds, model_ray);
+                let right_dist = hit_bounding_box(right.bounds, model_ray);
 
                 if left_dist > 0.0 && (left_dist < hit.t || hit.t < 0.0) { stack[pointer] = node.index; pointer++; }
                 if right_dist > 0.0 && (right_dist < hit.t || hit.t < 0.0) { stack[pointer] = node.index + 1; pointer++; }
             } else {
                 for (var j = 0u; j < node.face_count; j++) {
                     let triangle = faces[model.face_offset + node.index + j];
-                    let result = hit_triangle(triangle, ray);
+                    let result = hit_triangle(triangle, model_ray);
 
                     if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
                         hit = result;
+                        hit.normal = (model.transformation * vec4(hit.normal, 0.0)).xyz;
                         material = model.material;
                     }
                 }

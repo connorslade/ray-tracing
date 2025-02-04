@@ -1,6 +1,6 @@
 use std::hash::{Hash, Hasher};
 
-use compute::export::nalgebra::{Vector2, Vector3};
+use compute::export::nalgebra::{Matrix4, Vector2, Vector3};
 use encase::ShaderType;
 use ordered_float::OrderedFloat;
 
@@ -31,10 +31,24 @@ pub struct Material {
 }
 
 #[derive(ShaderType, Default, Clone, Copy, PartialEq)]
-pub struct Model {
+pub struct GpuModel {
     pub material: Material,
     pub node_offset: u32,
     pub face_offset: u32,
+
+    pub transformation: Matrix4<f32>,
+    pub inv_transformation: Matrix4<f32>,
+}
+
+pub struct Model {
+    pub name: String,
+
+    pub material: Material,
+    pub node_offset: u32,
+    pub face_offset: u32,
+
+    pub position: Vector3<f32>,
+    pub scale: Vector3<f32>,
 }
 
 #[derive(ShaderType, Default, Copy, Clone, PartialEq)]
@@ -56,6 +70,21 @@ impl Triangle {
     }
 }
 
+impl Model {
+    pub fn to_gpu(&self) -> GpuModel {
+        let transformation =
+            Matrix4::new_nonuniform_scaling(&self.scale) * Matrix4::new_translation(&self.position);
+
+        GpuModel {
+            material: self.material,
+            node_offset: self.node_offset,
+            face_offset: self.face_offset,
+            transformation,
+            inv_transformation: transformation.try_inverse().unwrap(),
+        }
+    }
+}
+
 impl Hash for Material {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.diffuse_color.map(OrderedFloat).hash(state);
@@ -72,6 +101,9 @@ impl Hash for Model {
         self.material.hash(state);
         state.write_u32(self.node_offset);
         state.write_u32(self.face_offset);
+
+        self.position.map(OrderedFloat).hash(state);
+        self.scale.map(OrderedFloat).hash(state);
     }
 }
 
