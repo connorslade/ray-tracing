@@ -26,7 +26,7 @@ fn main() -> Result<()> {
     let gpu = Gpu::init()?;
 
     let (obj, materials) = tobj::load_obj(
-        "teapot.obj",
+        "scenes/cornell-box.obj",
         &LoadOptions {
             triangulate: true,
             single_index: true,
@@ -40,6 +40,8 @@ fn main() -> Result<()> {
     let mut nodes = Vec::new();
 
     for model in obj {
+        println!("Loading {}", model.name);
+
         let mut triangles = Vec::new();
         let material = &materials[model.mesh.material_id.unwrap()];
 
