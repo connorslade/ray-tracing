@@ -74,12 +74,6 @@ impl Interactive for App {
             let window = gcx.window.inner_size();
             let window = Vector2::new(window.width, window.height) / self.screen_fraction as u32;
 
-            let compute_running = self.compute_running.clone();
-            self.compute_pipeline.dispatch_callback(
-                Vector3::new(window.x.div_ceil(8), window.y.div_ceil(8), 1),
-                move || compute_running.store(false, Ordering::Relaxed),
-            );
-
             if self.last_window != window {
                 self.uniform.accumulation_frame = 1;
                 self.last_window = window;
@@ -91,6 +85,12 @@ impl Interactive for App {
             self.uniform.window = window;
             self.uniform.frame += 1;
             self.uniform_buffer.upload(&self.uniform).unwrap();
+
+            let compute_running = self.compute_running.clone();
+            self.compute_pipeline.queue_dispatch_callback(
+                Vector3::new(window.x.div_ceil(8), window.y.div_ceil(8), 1),
+                move || compute_running.store(false, Ordering::Relaxed),
+            );
         }
 
         self.render_pipeline.draw_quad(render_pass, 0..1);

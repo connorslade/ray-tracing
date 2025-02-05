@@ -473,7 +473,7 @@ dependencies = [
 [[package]]
 name = "compute"
 version = "0.1.0"
-source = "git+https://github.com/connorslade/compute#13c2d8d2d64d9aeb571adf2ce6df89118dcd2f08"
+source = "git+https://github.com/connorslade/compute#81f8c8c45b056d90cb8a2076cfd250c0eaca85f5"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -3018,9 +3018,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.8.19"
+version = "0.8.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1ed1f98e3fdc28d6d910e6737ae6ab1a93bf1985935a1193e68f93eeb68d24e"
+checksum = "cd87a5cdd6ffab733b2f74bc4fd7ee5fff6634124999ac278c35fc78c6120148"
 dependencies = [
  "serde",
  "serde_spanned",

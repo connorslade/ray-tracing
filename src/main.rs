@@ -31,7 +31,7 @@ fn main() -> Result<()> {
     let gpu = Gpu::init()?;
 
     let mut scene = Scene::empty();
-    scene.load("scenes/cornell-box.obj")?;
+    scene.load("scenes/mirascope.obj")?;
 
     let sphere_buffer = gpu.create_storage_read(&Vec::new())?;
     let (model_buffer, node_buffer, face_buffer) = scene.create_buffers(&gpu)?;
