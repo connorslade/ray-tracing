@@ -12,6 +12,8 @@ const PI: f32 = 3.141592653589793;
 @compute
 @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+    if global_id.x >= ctx.window.x || global_id.y >= ctx.window.y { return; }
+
     let pixel_idx = global_id.y * ctx.window.x + global_id.x;
     let uv = vec2f(global_id.xy) / vec2f(ctx.window);
     let pos = vec2f(uv.x, 1.0 - uv.y) - 0.5;
@@ -25,7 +27,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     color /= f32(ctx.samples);
 
     let out = mix(accumulation[pixel_idx], color, 1.0 / f32(ctx.accumulation_frame));
-    accumulation[pixel_idx] = color;
+    accumulation[pixel_idx] = out;
 }
 
 fn sample(pos: vec2f) -> vec3f {

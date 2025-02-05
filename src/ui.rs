@@ -3,7 +3,7 @@ use std::{fs::File, time::Instant};
 use compute::{
     export::{
         egui::{Context, DragValue, Grid, Slider, Ui, Window},
-        nalgebra::Vector3,
+        nalgebra::{Vector2, Vector3},
     },
     interactive::GraphicsCtx,
 };
@@ -30,6 +30,11 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
             ui.separator();
 
             ui.collapsing("Rendering", |ui| {
+                ui.horizontal(|ui| {
+                    ui.add(Slider::new(&mut app.screen_fraction, 1..=16));
+                    ui.label("Screen Fraction");
+                });
+
                 ui.horizontal(|ui| {
                     ui.add(Slider::new(&mut app.uniform.samples, 1..=20));
                     ui.label("Samples");
@@ -58,6 +63,8 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
 
             if ui.button("Capture").clicked() {
                 let window = gcx.window.inner_size();
+                let window = Vector2::new(window.width, window.height) / app.screen_fraction as u32;
+
                 app.accumulation_buffer.download_async(move |data| {
                     let encoder = PngEncoder::new(File::create("out.png").unwrap());
                     let data = data
@@ -67,15 +74,9 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
                         .collect::<Vec<_>>();
 
                     encoder
-                        .write_image(&data, window.width, window.height, ExtendedColorType::Rgb8)
+                        .write_image(&data, window.x, window.y, ExtendedColorType::Rgb8)
                         .unwrap();
                 });
-            }
-
-            if ui.button("Render").clicked() {
-                let window = gcx.window.inner_size();
-                app.compute_pipeline
-                    .dispatch(Vector3::new(window.width / 8, window.height / 8, 1));
             }
         });
 

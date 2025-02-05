@@ -1,4 +1,10 @@
-use std::time::Instant;
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Instant,
+};
 
 use compute::{
     buffer::{StorageBuffer, UniformBuffer},
@@ -20,6 +26,7 @@ use crate::{
 pub struct App {
     pub compute_pipeline: ComputePipeline,
     pub render_pipeline: RenderPipeline,
+    pub compute_running: Arc<AtomicBool>,
 
     pub uniform_buffer: UniformBuffer<Uniform>,
     pub accumulation_buffer: StorageBuffer<Vec<Vector3<f32>>, Mutable>,
@@ -34,6 +41,7 @@ pub struct App {
     pub last_frame: Instant,
     pub last_window: Vector2<u32>,
     pub accumulate: bool,
+    pub screen_fraction: u8,
 }
 
 impl App {
@@ -57,29 +65,34 @@ impl Interactive for App {
     }
 
     fn render(&mut self, gcx: GraphicsCtx, render_pass: &mut RenderPass) {
-        self.uniform.accumulation_frame += 1;
-        if !self.accumulate {
-            self.uniform.accumulation_frame = 1;
+        if !self.compute_running.swap(true, Ordering::Relaxed) {
+            self.uniform.accumulation_frame += 1;
+            if !self.accumulate {
+                self.uniform.accumulation_frame = 1;
+            }
+
+            let window = gcx.window.inner_size();
+            let window = Vector2::new(window.width, window.height) / self.screen_fraction as u32;
+
+            let compute_running = self.compute_running.clone();
+            self.compute_pipeline.dispatch_callback(
+                Vector3::new(window.x.div_ceil(8), window.y.div_ceil(8), 1),
+                move || compute_running.store(false, Ordering::Relaxed),
+            );
+
+            if self.last_window != window {
+                self.uniform.accumulation_frame = 1;
+                self.last_window = window;
+                self.accumulation_buffer
+                    .upload_shrink(&vec![Vector3::zeros(); (window.x * window.y) as usize])
+                    .unwrap();
+            }
+
+            self.uniform.window = window;
+            self.uniform.frame += 1;
+            self.uniform_buffer.upload(&self.uniform).unwrap();
         }
-
-        let window = gcx.window.inner_size();
-        let window = Vector2::new(window.width, window.height);
-
-        self.uniform.window = window;
-        if self.last_window != window {
-            self.uniform.accumulation_frame = 1;
-            self.last_window = window;
-            self.accumulation_buffer
-                .upload_shrink(&vec![Vector3::zeros(); (window.x * window.y) as usize])
-                .unwrap();
-        }
-
-        self.uniform.frame += 1;
-        self.uniform_buffer.upload(&self.uniform).unwrap();
 
         self.render_pipeline.draw_quad(render_pass, 0..1);
-
-        self.compute_pipeline
-            .dispatch(Vector3::new(window.x / 8, window.y / 8, 1));
     }
 }
