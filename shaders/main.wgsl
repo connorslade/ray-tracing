@@ -1,11 +1,12 @@
 @group(0) @binding(0) var<uniform> ctx: Uniform;
 @group(0) @binding(1) var<storage, read_write> accumulation: array<vec3f>;
 
-@group(0) @binding(2) var<storage, read> spheres: array<Sphere>;
+// @group(0) @binding(2) var<storage, read> spheres: array<Sphere>;
 
-@group(0) @binding(3) var<storage, read> models: array<Model>;
-@group(0) @binding(4) var<storage, read> nodes: array<BvhNode>;
-@group(0) @binding(5) var<storage, read> faces: array<Triangle>;
+// @group(0) @binding(3) var<storage, read> models: array<Model>;
+// @group(0) @binding(4) var<storage, read> nodes: array<BvhNode>;
+// @group(0) @binding(5) var<storage, read> faces: array<Triangle>;
+@group(0) @binding(2) var acceleration: acceleration_structure;
 
 const PI: f32 = 3.141592653589793;
 
@@ -39,84 +40,93 @@ fn sample(pos: vec2f) -> vec3f {
     var color = vec3(1.0);
 
     for (var bounce = 0u; bounce < ctx.max_bounces; bounce++) {
-        let trace = trace_ray(ray);
+        // let trace = trace_ray(ray);
+        var rq: ray_query;
+        rayQueryInitialize(&rq, acceleration, RayDesc(0, 0xFFu, 0.001, 3.40282347e+38f, ray.pos, ray.dir));
+        rayQueryProceed(&rq);
 
-        if trace.hit.t < 0.0 {
+        let ray_intersection = rayQueryGetCommittedIntersection(&rq);
+
+
+        if ray_intersection.t < 0.0 {
             // light += background_color(ray.dir) * color * ctx.enviroment;
             light += vec3(0.3) * color * ctx.enviroment;
             break;
+        } else {
+            light = vec3(1.0, 0.0, 0.0);
+            break;
         }
 
-        let emitted = trace.material.emission_color * trace.material.emission_strength;
+        // let emitted = trace.material.emission_color * trace.material.emission_strength;
 
-        let scatter = get_scattered_direction(ray, trace);
-        light += emitted * color;
-        color *= scatter.color;
+        // let scatter = get_scattered_direction(ray, trace);
+        // light += emitted * color;
+        // color *= scatter.color;
 
-        ray = Ray(
-            trace.hit.position + trace.hit.normal * 0.0001,
-            scatter.direction,
-            1.0 / scatter.direction
-        );
+        // ray = Ray(
+        //     trace.hit.position + trace.hit.normal * 0.0001,
+        //     scatter.direction,
+        //     1.0 / scatter.direction
+        // );
     }
 
     return light;
 }
 
-fn trace_ray(ray: Ray) -> TraceResult {
-    var hit = default_hit();
-    var material = default_material();
+// fn trace_ray(ray: Ray) -> TraceResult {
+//     var hit = default_hit();
+//     var material = default_material();
 
-    for (var i = 0u; i < arrayLength(&spheres); i++) {
-        let sphere = spheres[i];
-        let result = hit_sphere(sphere, ray);
+//     for (var i = 0u; i < arrayLength(&spheres); i++) {
+//         let sphere = spheres[i];
+//         let result = hit_sphere(sphere, ray);
 
-        if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
-            hit = result;
-            material = sphere.material;
-        }
-    }
+//         if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
+//             hit = result;
+//             material = sphere.material;
+//         }
+//     }
 
-    var stack = array<u32, 32>();
-    var pointer = 0;
+//     var stack = array<u32, 32>();
+//     var pointer = 0;
 
-    for (var i = 0u; i < arrayLength(&models); i++) {
-        let model = models[i];
+//     for (var i = 0u; i < arrayLength(&models); i++) {
+//         let model = models[i];
 
-        let model_pos = (model.inv_transformation * vec4(ray.pos, 1.0)).xyz;
-        let model_dir = (model.inv_transformation * vec4(ray.dir, 0.0)).xyz;
-        let model_ray = Ray(model_pos, model_dir, 1.0 / model_dir);
+//         let model_pos = (model.inv_transformation * vec4(ray.pos, 1.0)).xyz;
+//         let model_dir = (model.inv_transformation * vec4(ray.dir, 0.0)).xyz;
+//         let model_ray = Ray(model_pos, model_dir, 1.0 / model_dir);
 
-        stack[0] = 0u;
-        pointer = 1;
+//         stack[0] = 0u;
+//         pointer = 1;
 
-        while pointer > 0 {
-            pointer--;
-            let node = nodes[model.node_offset + stack[pointer]];
+//         while pointer > 0 {
+//             pointer--;
+//             let node = nodes[model.node_offset + stack[pointer]];
 
-            if node.face_count == 0 {
-                let left = nodes[model.node_offset + node.index];
-                let right = nodes[model.node_offset + node.index + 1];
+//             if node.face_count == 0 {
+//                 let left = nodes[model.node_offset + node.index];
+//                 let right = nodes[model.node_offset + node.index + 1];
 
-                let left_dist = hit_bounding_box(left.bounds, model_ray);
-                let right_dist = hit_bounding_box(right.bounds, model_ray);
+//                 let left_dist = hit_bounding_box(left.bounds, model_ray);
+//                 let right_dist = hit_bounding_box(right.bounds, model_ray);
 
-                if left_dist > 0.0 && (left_dist < hit.t || hit.t < 0.0) { stack[pointer] = node.index; pointer++; }
-                if right_dist > 0.0 && (right_dist < hit.t || hit.t < 0.0) { stack[pointer] = node.index + 1; pointer++; }
-            } else {
-                for (var j = 0u; j < node.face_count; j++) {
-                    let triangle = faces[model.face_offset + node.index + j];
-                    let result = hit_triangle(triangle, model_ray);
+//                 if left_dist > 0.0 && (left_dist < hit.t || hit.t < 0.0) { stack[pointer] = node.index; pointer++; }
+//                 if right_dist > 0.0 && (right_dist < hit.t || hit.t < 0.0) { stack[pointer] = node.index + 1; pointer++; }
+//             } else {
+//                 for (var j = 0u; j < node.face_count; j++) {
+//                     let triangle = faces[model.face_offset + node.index + j];
+//                     let result = hit_triangle(triangle, model_ray);
 
-                    if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
-                        hit = result;
-                        hit.normal = (model.transformation * vec4(hit.normal, 0.0)).xyz;
-                        material = model.material;
-                    }
-                }
-            }
-        }
-    }
+//                     if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
+//                         hit = result;
+//                         hit.normal = (model.transformation * vec4(hit.normal, 0.0)).xyz;
+//                         material = model.material;
+//                     }
+//                 }
+//             }
+//         }
+//     }
 
-    return TraceResult(hit, material);
-}
+//     return TraceResult(hit, material);
+// }

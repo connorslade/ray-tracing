@@ -33,6 +33,10 @@ fn main() -> Result<()> {
     let mut scene = Scene::empty();
     scene.load("scenes/mirascope.obj")?;
 
+    let vert = gpu.create_blas(&scene.verts, "vert")?;
+    let index = gpu.create_blas(&scene.index, "index")?;
+    let acc = gpu.create_acceleration_structure(vert, index, &scene.geometry);
+
     let sphere_buffer = gpu.create_storage_read(&Vec::new())?;
     let (model_buffer, node_buffer, face_buffer) = scene.create_buffers(&gpu)?;
 
@@ -43,10 +47,11 @@ fn main() -> Result<()> {
         .compute_pipeline(COMPUTE_SOURCE)
         .bind_buffer(&uniform_buffer)
         .bind_buffer(&accumulation_buffer)
-        .bind_buffer(&sphere_buffer)
-        .bind_buffer(&model_buffer)
-        .bind_buffer(&node_buffer)
-        .bind_buffer(&face_buffer)
+        // .bind_buffer(&sphere_buffer)
+        // .bind_buffer(&model_buffer)
+        // .bind_buffer(&node_buffer)
+        // .bind_buffer(&face_buffer)
+        .bind_buffer(&acc)
         .finish();
     let render_pipeline = gpu
         .render_pipeline(RENDER_SOURCE)

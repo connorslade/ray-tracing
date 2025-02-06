@@ -7,7 +7,7 @@ use std::{
 };
 
 use compute::{
-    buffer::{StorageBuffer, UniformBuffer},
+    bindings::{StorageBuffer, UniformBuffer},
     export::{
         egui::Context,
         nalgebra::{Vector2, Vector3},

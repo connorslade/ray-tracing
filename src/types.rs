@@ -1,7 +1,7 @@
 use std::hash::{Hash, Hasher};
 
 use compute::{
-    buffer::StorageBuffer,
+    bindings::StorageBuffer,
     export::nalgebra::{Matrix4, Vector2, Vector3},
     misc::mutability::Immutable,
 };

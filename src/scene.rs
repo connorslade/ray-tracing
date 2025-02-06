@@ -1,7 +1,12 @@
 use std::{fmt::Debug, path::Path};
 
 use anyhow::{Ok, Result};
-use compute::{export::nalgebra::Vector3, gpu::Gpu};
+use compute::{
+    bindings::acceleration_structure::{Geometry, GeometryPrimitive},
+    export::nalgebra::{Matrix4, Vector2, Vector3},
+    gpu::Gpu,
+};
+use encase::{ShaderSize, ShaderType};
 use tobj::LoadOptions;
 
 use crate::{
@@ -14,6 +19,16 @@ pub struct Scene {
     pub models: Vec<Model>,
     pub faces: Vec<Triangle>,
     pub nodes: Vec<BvhNode>,
+
+    pub geometry: Vec<Geometry>,
+    pub verts: Vec<Vertex>,
+    pub index: Vec<u32>,
+}
+
+#[derive(ShaderType)]
+pub struct Vertex {
+    position: Vector3<f32>,
+    normal: Vector3<f32>,
 }
 
 impl Scene {
@@ -22,6 +37,10 @@ impl Scene {
             models: Vec::new(),
             faces: Vec::new(),
             nodes: Vec::new(),
+
+            geometry: Vec::new(),
+            verts: Vec::new(),
+            index: Vec::new(),
         }
     }
 
@@ -47,13 +66,46 @@ impl Scene {
         )?;
         let materials = materials?;
 
+        dbg!(Vertex::SHADER_SIZE);
+
         let object_count = obj.len();
-        for (i, model) in obj.into_iter().enumerate() {
+        for (i, model) in obj.into_iter().enumerate().take(1) {
             println!(
                 " {} Loading `{}`",
                 if i + 1 == object_count { "\\" } else { "|" },
                 model.name
             );
+
+            let first_vertex = self.verts.len();
+
+            {
+                let mesh = &model.mesh;
+                println!("verts = {}", mesh.positions.len() / 3);
+                println!("triangles = {}", model.mesh.indices.len() / 3);
+                println!("triangles * 3 = {}", model.mesh.indices.len());
+                self.verts.extend(
+                    mesh.positions
+                        .chunks_exact(3)
+                        .zip(mesh.normals.chunks_exact(3))
+                        .map(|(pos, normal)| Vertex {
+                            position: Vector3::new(pos[0], pos[1], pos[2]),
+                            normal: Vector3::new(normal[0], normal[1], normal[2]),
+                        }),
+                );
+                self.index.extend_from_slice(&mesh.indices);
+            }
+
+            for i in 0..(model.mesh.indices.len() / 3) {
+                self.geometry.push(Geometry {
+                    transformation: Matrix4::identity(),
+                    primitives: vec![GeometryPrimitive {
+                        first_vertex: first_vertex as u32,
+                        vertex_count: (self.verts.len() - first_vertex) as u32,
+                        first_index: 3 * i as u32,
+                        index_count: 3,
+                    }],
+                });
+            }
 
             let mut triangles = Vec::new();
             let material = &materials[model.mesh.material_id.unwrap()];
