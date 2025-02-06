@@ -35,8 +35,7 @@ fn main() -> Result<()> {
     let mut scene = Scene::empty();
     scene.load("scenes/dragon.obj")?;
 
-    let acceleration = scene.finish(&gpu)?;
-
+    let (model_buffer, vertex, index, acceleration) = scene.finish(&gpu)?;
     let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
     let accumulation_buffer = gpu.create_storage::<Vec<Vector3<f32>>>(&vec![])?;
 
@@ -44,11 +43,10 @@ fn main() -> Result<()> {
         .compute_pipeline(COMPUTE_SOURCE)
         .bind_buffer(&uniform_buffer)
         .bind_buffer(&accumulation_buffer)
-        // .bind_buffer(&sphere_buffer)
-        // .bind_buffer(&model_buffer)
-        // .bind_buffer(&node_buffer)
-        // .bind_buffer(&face_buffer)
+        .bind_buffer(&model_buffer)
         .bind_buffer(&acceleration)
+        .bind_buffer(&vertex)
+        .bind_buffer(&index)
         .finish();
     let render_pipeline = gpu
         .render_pipeline(RENDER_SOURCE)
@@ -66,7 +64,7 @@ fn main() -> Result<()> {
             uniform_buffer,
             accumulation_buffer,
 
-            // model_buffer,
+            model_buffer,
             uniform: Uniform {
                 window: Vector2::zeros(),
                 camera: Camera::default(),
@@ -77,7 +75,8 @@ fn main() -> Result<()> {
                 max_bounces: 10,
                 samples: 5,
             },
-            // models: scene.models,
+
+            models: scene.models,
             last_frame: Instant::now(),
             last_window: Vector2::zeros(),
             accumulate: true,

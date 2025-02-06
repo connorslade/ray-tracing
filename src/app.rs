@@ -19,7 +19,7 @@ use compute::{
 };
 
 use crate::{
-    types::{Model, ModelBuffer, Sphere, SphereBuffer, Uniform},
+    types::{Model, ModelBuffer, Uniform},
     ui::ui,
 };
 
@@ -30,10 +30,10 @@ pub struct App {
 
     pub uniform_buffer: UniformBuffer<Uniform>,
     pub accumulation_buffer: StorageBuffer<Vec<Vector3<f32>>, Mutable>,
-
-    // pub model_buffer: ModelBuffer,
+    pub model_buffer: ModelBuffer,
     pub uniform: Uniform,
-    // pub models: Vec<Model>,
+
+    pub models: Vec<Model>,
     pub last_frame: Instant,
     pub last_window: Vector2<u32>,
     pub accumulate: bool,
@@ -46,8 +46,8 @@ impl App {
     }
 
     pub fn upload_models(&self) {
-        // let gpu_models = self.models.iter().map(|x| x.to_gpu()).collect::<Vec<_>>();
-        // self.model_buffer.upload_shrink(&gpu_models).unwrap();
+        let gpu_models = self.models.iter().map(|x| x.to_gpu()).collect::<Vec<_>>();
+        self.model_buffer.upload_shrink(&gpu_models).unwrap();
     }
 }
 

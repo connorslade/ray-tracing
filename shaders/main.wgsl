@@ -1,11 +1,11 @@
 @group(0) @binding(0) var<uniform> ctx: Uniform;
 @group(0) @binding(1) var<storage, read_write> accumulation: array<vec3f>;
-@group(0) @binding(2) var acceleration: acceleration_structure;
+@group(0) @binding(2) var<storage, read> models: array<Model>;
+@group(0) @binding(3) var acceleration: acceleration_structure;
 
-// @group(0) @binding(2) var<storage, read> spheres: array<Sphere>;
-// @group(0) @binding(3) var<storage, read> models: array<Model>;
-// @group(0) @binding(4) var<storage, read> nodes: array<BvhNode>;
-// @group(0) @binding(5) var<storage, read> faces: array<Triangle>;
+@group(0) @binding(4) var<storage, read> vertex: array<Vertex>;
+@group(0) @binding(5) var<storage, read> index: array<u32>;
+
 
 const PI: f32 = 3.141592653589793;
 
@@ -33,7 +33,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 fn sample(pos: vec2f) -> vec3f {
     let offset = (vec2(rand(), rand()) * 2.0 - 1.0) / vec2f(ctx.window);
     let dir = ray_direction(pos + offset);
-    var ray = Ray(ctx.camera.pos, dir, 1.0 / dir);
+    var ray = Ray(ctx.camera.pos, dir);
 
     var light = vec3(0.0);
     var color = vec3(1.0);
@@ -44,6 +44,18 @@ fn sample(pos: vec2f) -> vec3f {
         rayQueryProceed(&rq);
 
         let intersection = rayQueryGetCommittedIntersection(&rq);
+        let model = models[intersection.geometry_index];
+
+        let index_start = model.index_start + intersection.primitive_index * 3;
+
+        let v0 = vertex[model.vertex_start + index[index_start]];
+        let v1 = vertex[model.vertex_start + index[index_start + 1]];
+        let v2 = vertex[model.vertex_start + index[index_start + 2]];
+
+        let bary = vec3f(1.0 - intersection.barycentrics.x - intersection.barycentrics.y, intersection.barycentrics);
+
+        let normal = v0.normal * bary.x + v1.normal * bary.y + v2.normal * bary.z;
+        let position = v0.position * bary.x + v1.position * bary.y + v2.position * bary.z;
 
         if intersection.kind == RAY_QUERY_INTERSECTION_NONE {
             light += background_color(ray.dir) * color * ctx.enviroment;
@@ -51,77 +63,14 @@ fn sample(pos: vec2f) -> vec3f {
             break;
         }
 
-        // let emitted = trace.material.emission_color * trace.material.emission_strength;
+        let emitted = model.material.emission_color * model.material.emission_strength;
 
-        // let scatter = get_scattered_direction(ray, trace);
-        // light += emitted * color;
-        // color *= scatter.color;
-        color *= vec3(1.0, 0.5, 0.5);
+        let scatter = get_scattered_direction(ray, normal, model.material);
+        light += emitted * color;
+        color *= scatter.color;
 
-        // ray = Ray(
-        //     trace.hit.position + trace.hit.normal * 0.0001,
-        //     scatter.direction,
-        //     1.0 / scatter.direction
-        // );
+        ray = Ray(position + normal * 0.0001, scatter.direction);
     }
 
     return light;
 }
-
-// fn trace_ray(ray: Ray) -> TraceResult {
-//     var hit = default_hit();
-//     var material = default_material();
-
-//     for (var i = 0u; i < arrayLength(&spheres); i++) {
-//         let sphere = spheres[i];
-//         let result = hit_sphere(sphere, ray);
-
-//         if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
-//             hit = result;
-//             material = sphere.material;
-//         }
-//     }
-
-//     var stack = array<u32, 32>();
-//     var pointer = 0;
-
-//     for (var i = 0u; i < arrayLength(&models); i++) {
-//         let model = models[i];
-
-//         let model_pos = (model.inv_transformation * vec4(ray.pos, 1.0)).xyz;
-//         let model_dir = (model.inv_transformation * vec4(ray.dir, 0.0)).xyz;
-//         let model_ray = Ray(model_pos, model_dir, 1.0 / model_dir);
-
-//         stack[0] = 0u;
-//         pointer = 1;
-
-//         while pointer > 0 {
-//             pointer--;
-//             let node = nodes[model.node_offset + stack[pointer]];
-
-//             if node.face_count == 0 {
-//                 let left = nodes[model.node_offset + node.index];
-//                 let right = nodes[model.node_offset + node.index + 1];
-
-//                 let left_dist = hit_bounding_box(left.bounds, model_ray);
-//                 let right_dist = hit_bounding_box(right.bounds, model_ray);
-
-//                 if left_dist > 0.0 && (left_dist < hit.t || hit.t < 0.0) { stack[pointer] = node.index; pointer++; }
-//                 if right_dist > 0.0 && (right_dist < hit.t || hit.t < 0.0) { stack[pointer] = node.index + 1; pointer++; }
-//             } else {
-//                 for (var j = 0u; j < node.face_count; j++) {
-//                     let triangle = faces[model.face_offset + node.index + j];
-//                     let result = hit_triangle(triangle, model_ray);
-
-//                     if result.t > 0.0 && (result.t < hit.t || hit.t < 0.0) {
-//                         hit = result;
-//                         hit.normal = (model.transformation * vec4(hit.normal, 0.0)).xyz;
-//                         material = model.material;
-//                     }
-//                 }
-//             }
-//         }
-//     }
-
-//     return TraceResult(hit, material);
-// }

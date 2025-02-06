@@ -12,7 +12,7 @@ use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
 use crate::{
     app::App,
     misc::{hash, vec3_dragger},
-    types::{Material, Sphere},
+    types::Material,
 };
 
 pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
@@ -85,31 +85,31 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
 }
 
 fn model_settings(app: &mut App, ui: &mut Ui) {
-    // let old_models = hash(&app.models);
-    // for model in app.models.iter_mut() {
-    //     CollapsingHeader::new(&model.name)
-    //         .id_salt(model.id)
-    //         .show(ui, |ui| {
-    //             Grid::new(&model.name).num_columns(2).show(ui, |ui| {
-    //                 ui.label("Position");
-    //                 vec3_dragger(ui, &mut model.position, |x| x.speed(0.01));
-    //                 ui.end_row();
+    let old_models = hash(&app.models);
+    for model in app.models.iter_mut() {
+        CollapsingHeader::new(&model.name)
+            .id_salt(model.id)
+            .show(ui, |ui| {
+                Grid::new(&model.name).num_columns(2).show(ui, |ui| {
+                    ui.label("Position");
+                    vec3_dragger(ui, &mut model.position, |x| x.speed(0.01));
+                    ui.end_row();
 
-    //                 ui.label("Scale");
-    //                 vec3_dragger(ui, &mut model.scale, |x| x.speed(0.01));
-    //                 ui.end_row();
-    //             });
+                    ui.label("Scale");
+                    vec3_dragger(ui, &mut model.scale, |x| x.speed(0.01));
+                    ui.end_row();
+                });
 
-    //             ui.separator();
+                ui.separator();
 
-    //             material_settings(ui, &mut model.material);
-    //         });
-    // }
+                material_settings(ui, &mut model.material);
+            });
+    }
 
-    // if hash(&app.models) != old_models {
-    //     app.invalidate_accumulation();
-    //     app.upload_models();
-    // }
+    if hash(&app.models) != old_models {
+        app.invalidate_accumulation();
+        app.upload_models();
+    }
 }
 
 fn material_settings(ui: &mut Ui, material: &mut Material) {
