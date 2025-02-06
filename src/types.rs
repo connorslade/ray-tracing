@@ -1,19 +1,16 @@
 use std::hash::{Hash, Hasher};
 
 use compute::{
-    buffer::StorageBuffer,
-    export::nalgebra::{Matrix4, Vector2, Vector3},
+    bindings::StorageBuffer,
+    export::nalgebra::{Vector2, Vector3},
     misc::mutability::Immutable,
 };
 use encase::ShaderType;
 use ordered_float::OrderedFloat;
 
-use crate::{bvh::BvhNode, camera::Camera};
+use crate::camera::Camera;
 
 pub type ModelBuffer = StorageBuffer<Vec<GpuModel>, Immutable>;
-pub type NodeBuffer = StorageBuffer<Vec<BvhNode>, Immutable>;
-pub type FaceBuffer = StorageBuffer<Vec<Triangle>, Immutable>;
-pub type SphereBuffer = StorageBuffer<Vec<Sphere>, Immutable>;
 
 #[derive(Default, ShaderType)]
 pub struct Uniform {
@@ -41,12 +38,9 @@ pub struct Material {
 
 #[derive(ShaderType, Default, Clone, Copy, PartialEq)]
 pub struct GpuModel {
-    pub material: Material,
-    pub node_offset: u32,
-    pub face_offset: u32,
-
-    pub transformation: Matrix4<f32>,
-    pub inv_transformation: Matrix4<f32>,
+    material: Material,
+    vertex_start: u32,
+    index_start: u32,
 }
 
 pub struct Model {
@@ -54,43 +48,25 @@ pub struct Model {
     pub id: u32,
 
     pub material: Material,
-    pub node_offset: u32,
-    pub face_offset: u32,
+    pub vertex_start: u32,
+    pub index_start: u32,
 
     pub position: Vector3<f32>,
     pub scale: Vector3<f32>,
 }
 
-#[derive(ShaderType, Default, Copy, Clone, PartialEq)]
-pub struct Sphere {
+#[derive(ShaderType)]
+pub struct Vertex {
     pub position: Vector3<f32>,
-    pub radius: f32,
-    pub material: Material,
-}
-
-#[derive(ShaderType, Debug, Default, Copy, Clone, PartialEq)]
-pub struct Triangle {
-    pub vertices: [Vector3<f32>; 3],
-    pub normals: [Vector3<f32>; 3],
-}
-
-impl Triangle {
-    pub fn center(&self) -> Vector3<f32> {
-        self.vertices.iter().sum::<Vector3<_>>() / 2.0
-    }
+    pub normal: Vector3<f32>,
 }
 
 impl Model {
     pub fn to_gpu(&self) -> GpuModel {
-        let transformation =
-            Matrix4::new_nonuniform_scaling(&self.scale) * Matrix4::new_translation(&self.position);
-
         GpuModel {
             material: self.material,
-            node_offset: self.node_offset,
-            face_offset: self.face_offset,
-            transformation,
-            inv_transformation: transformation.try_inverse().unwrap(),
+            vertex_start: self.vertex_start,
+            index_start: self.index_start,
         }
     }
 }
@@ -109,18 +85,7 @@ impl Hash for Material {
 impl Hash for Model {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.material.hash(state);
-        state.write_u32(self.node_offset);
-        state.write_u32(self.face_offset);
-
         self.position.map(OrderedFloat).hash(state);
         self.scale.map(OrderedFloat).hash(state);
-    }
-}
-
-impl Hash for Sphere {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.position.map(OrderedFloat).hash(state);
-        OrderedFloat(self.radius).hash(state);
-        self.material.hash(state);
     }
 }

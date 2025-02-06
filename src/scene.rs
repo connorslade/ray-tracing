@@ -1,41 +1,61 @@
 use std::{fmt::Debug, path::Path};
 
 use anyhow::{Ok, Result};
-use compute::{export::nalgebra::Vector3, gpu::Gpu};
+use compute::{
+    bindings::{
+        acceleration_structure::{AccelerationStructure, Geometry, GeometryPrimitive},
+        BlasBuffer,
+    },
+    export::nalgebra::{Matrix4, Vector3},
+    gpu::Gpu,
+};
 use tobj::LoadOptions;
 
 use crate::{
-    bvh::{Bvh, BvhNode},
     misc::next_id,
-    types::{FaceBuffer, Material, Model, ModelBuffer, NodeBuffer, Triangle},
+    types::{Material, Model, ModelBuffer, Vertex},
 };
 
 pub struct Scene {
+    pub geometry: Vec<Geometry>,
     pub models: Vec<Model>,
-    pub faces: Vec<Triangle>,
-    pub nodes: Vec<BvhNode>,
+
+    pub verts: Vec<Vertex>,
+    pub index: Vec<u32>,
 }
 
 impl Scene {
     pub fn empty() -> Self {
         Self {
+            geometry: Vec::new(),
             models: Vec::new(),
-            faces: Vec::new(),
-            nodes: Vec::new(),
+
+            verts: Vec::new(),
+            index: Vec::new(),
         }
     }
 
-    pub fn create_buffers(&self, gpu: &Gpu) -> Result<(ModelBuffer, NodeBuffer, FaceBuffer)> {
-        let models = self.models.iter().map(|x| x.to_gpu()).collect();
-        Ok((
-            gpu.create_storage_read(&models)?,
-            gpu.create_storage_read(&self.nodes)?,
-            gpu.create_storage_read(&self.faces)?,
-        ))
+    pub fn finish(
+        &self,
+        gpu: &Gpu,
+    ) -> Result<(
+        ModelBuffer,
+        BlasBuffer<Vertex>,
+        BlasBuffer<u32>,
+        AccelerationStructure,
+    )> {
+        let vertex = gpu.create_blas(&self.verts)?;
+        let index = gpu.create_blas(&self.index)?;
+        let acceleration = gpu.create_acceleration_structure(&vertex, &index, &self.geometry);
+
+        let models = self.models.iter().map(|x| x.to_gpu()).collect::<Vec<_>>();
+        let models = gpu.create_storage_read(&models)?;
+
+        Ok((models, vertex, index, acceleration))
     }
 
     pub fn load(&mut self, path: impl AsRef<Path> + Debug) -> Result<()> {
-        println!("[*] Loading `{path:?}`");
+        println!("[*] Loading {path:?}");
 
         let (obj, materials) = tobj::load_obj(
             path,
@@ -48,6 +68,7 @@ impl Scene {
         let materials = materials?;
 
         let object_count = obj.len();
+        let mut primitives = Vec::new();
         for (i, model) in obj.into_iter().enumerate() {
             println!(
                 " {} Loading `{}`",
@@ -55,35 +76,28 @@ impl Scene {
                 model.name
             );
 
-            let mut triangles = Vec::new();
+            let (first_index, first_vertex) = (self.index.len(), self.verts.len());
+            let mesh = &model.mesh;
+
+            self.verts.extend(
+                mesh.positions
+                    .chunks_exact(3)
+                    .zip(mesh.normals.chunks_exact(3))
+                    .map(|(pos, normal)| Vertex {
+                        position: Vector3::new(pos[0], pos[1], pos[2]),
+                        normal: Vector3::new(normal[0], normal[1], normal[2]),
+                    }),
+            );
+            self.index.extend_from_slice(&mesh.indices);
+
+            primitives.push(GeometryPrimitive {
+                first_vertex: first_vertex as u32,
+                vertex_count: (self.verts.len() - first_vertex) as u32,
+                first_index: first_index as u32,
+                index_count: (self.index.len() - first_index) as u32,
+            });
+
             let material = &materials[model.mesh.material_id.unwrap()];
-
-            for face in model.mesh.indices.chunks_exact(3) {
-                let vertex = |idx: u32| {
-                    let start = idx as usize * 3;
-                    let positions = &model.mesh.positions;
-                    Vector3::new(positions[start], positions[start + 1], positions[start + 2])
-                };
-
-                let normal = |idx: u32| {
-                    let start = idx as usize * 3;
-                    let normals = &model.mesh.normals;
-                    Vector3::new(normals[start], normals[start + 1], normals[start + 2])
-                };
-
-                triangles.push(Triangle {
-                    vertices: [vertex(face[0]), vertex(face[1]), vertex(face[2])],
-                    normals: [normal(face[0]), normal(face[1]), normal(face[2])],
-                });
-            }
-
-            let face_offset = self.faces.len() as u32;
-            let node_offset = self.nodes.len() as u32;
-            let bvh = Bvh::from_mesh(&triangles);
-
-            self.faces.extend(bvh.faces);
-            self.nodes.extend(bvh.nodes);
-
             let diffuse = material.diffuse.unwrap();
             let specular = material.specular.unwrap();
             let shininess = material.shininess.unwrap() / 1000.0;
@@ -97,6 +111,7 @@ impl Scene {
             self.models.push(Model {
                 name: model.name,
                 id: next_id(),
+
                 material: Material {
                     diffuse_color: Vector3::new(diffuse[0], diffuse[1], diffuse[2]),
                     specular_color: Vector3::new(specular[0], specular[1], specular[2]),
@@ -107,13 +122,18 @@ impl Scene {
                     emission_color: emission.try_normalize(0.0).unwrap_or_default(),
                     emission_strength: emission.magnitude(),
                 },
-                node_offset,
-                face_offset,
+                vertex_start: first_vertex as u32,
+                index_start: first_index as u32,
 
                 position: Vector3::zeros(),
                 scale: Vector3::repeat(1.0),
             });
         }
+
+        self.geometry.push(Geometry {
+            transformation: Matrix4::identity(),
+            primitives,
+        });
 
         Ok(())
     }

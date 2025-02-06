@@ -7,7 +7,7 @@ use std::{
 };
 
 use compute::{
-    buffer::{StorageBuffer, UniformBuffer},
+    bindings::{StorageBuffer, UniformBuffer},
     export::{
         egui::Context,
         nalgebra::{Vector2, Vector3},
@@ -19,7 +19,7 @@ use compute::{
 };
 
 use crate::{
-    types::{Model, ModelBuffer, Sphere, SphereBuffer, Uniform},
+    types::{Model, ModelBuffer, Uniform},
     ui::ui,
 };
 
@@ -30,14 +30,10 @@ pub struct App {
 
     pub uniform_buffer: UniformBuffer<Uniform>,
     pub accumulation_buffer: StorageBuffer<Vec<Vector3<f32>>, Mutable>,
-
-    pub sphere_buffer: SphereBuffer,
     pub model_buffer: ModelBuffer,
-
     pub uniform: Uniform,
-    pub spheres: Vec<Sphere>,
-    pub models: Vec<Model>,
 
+    pub models: Vec<Model>,
     pub last_frame: Instant,
     pub last_window: Vector2<u32>,
     pub accumulate: bool,

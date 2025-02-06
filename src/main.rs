@@ -8,14 +8,13 @@ use camera::Camera;
 use compute::{
     export::{
         nalgebra::{Vector2, Vector3},
-        wgpu::ShaderStages,
+        wgpu::{PowerPreference, ShaderStages},
         winit::window::WindowAttributes,
     },
     gpu::Gpu,
 };
 
 mod app;
-mod bvh;
 mod camera;
 mod consts;
 mod misc;
@@ -28,14 +27,15 @@ use scene::Scene;
 use types::Uniform;
 
 fn main() -> Result<()> {
-    let gpu = Gpu::init()?;
+    let gpu = Gpu::builder()
+        .with_raytracing()
+        .power_preference(PowerPreference::HighPerformance)
+        .build()?;
 
     let mut scene = Scene::empty();
-    scene.load("scenes/mirascope.obj")?;
+    scene.load("scenes/dragon.obj")?;
 
-    let sphere_buffer = gpu.create_storage_read(&Vec::new())?;
-    let (model_buffer, node_buffer, face_buffer) = scene.create_buffers(&gpu)?;
-
+    let (model_buffer, vertex, index, acceleration) = scene.finish(&gpu)?;
     let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
     let accumulation_buffer = gpu.create_storage::<Vec<Vector3<f32>>>(&vec![])?;
 
@@ -43,10 +43,10 @@ fn main() -> Result<()> {
         .compute_pipeline(COMPUTE_SOURCE)
         .bind_buffer(&uniform_buffer)
         .bind_buffer(&accumulation_buffer)
-        .bind_buffer(&sphere_buffer)
         .bind_buffer(&model_buffer)
-        .bind_buffer(&node_buffer)
-        .bind_buffer(&face_buffer)
+        .bind_buffer(&acceleration)
+        .bind_buffer(&vertex)
+        .bind_buffer(&index)
         .finish();
     let render_pipeline = gpu
         .render_pipeline(RENDER_SOURCE)
@@ -64,9 +64,7 @@ fn main() -> Result<()> {
             uniform_buffer,
             accumulation_buffer,
 
-            sphere_buffer,
             model_buffer,
-
             uniform: Uniform {
                 window: Vector2::zeros(),
                 camera: Camera::default(),
@@ -77,9 +75,8 @@ fn main() -> Result<()> {
                 max_bounces: 10,
                 samples: 5,
             },
-            spheres: Vec::new(),
-            models: scene.models,
 
+            models: scene.models,
             last_frame: Instant::now(),
             last_window: Vector2::zeros(),
             accumulate: true,

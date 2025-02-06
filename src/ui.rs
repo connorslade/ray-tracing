@@ -12,7 +12,7 @@ use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
 use crate::{
     app::App,
     misc::{hash, vec3_dragger},
-    types::{Material, Sphere},
+    types::Material,
 };
 
 pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
@@ -55,7 +55,6 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
                 });
             });
 
-            ui.collapsing("Spheres", |ui| sphere_settings(app, ui));
             ui.collapsing("Models", |ui| model_settings(app, ui));
             ui.collapsing("Camera", |ui| app.uniform.camera.ui(ui));
 
@@ -82,47 +81,6 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
 
     if hash(&app.uniform.camera) != old_camera {
         app.invalidate_accumulation();
-    }
-}
-
-fn sphere_settings(app: &mut App, ui: &mut Ui) {
-    let old_spheres = hash(&app.spheres);
-    let mut delete = None;
-
-    for (i, sphere) in app.spheres.iter_mut().enumerate() {
-        let heading = format!("Sphere #{}", i + 1);
-        ui.collapsing(&heading, |ui| {
-            Grid::new(&heading).num_columns(2).show(ui, |ui| {
-                ui.label("Position");
-                vec3_dragger(ui, &mut sphere.position, |x| x.speed(0.01));
-                ui.end_row();
-
-                ui.label("Radius");
-                ui.add(DragValue::new(&mut sphere.radius).speed(0.01));
-                ui.end_row();
-            });
-
-            ui.separator();
-            material_settings(ui, &mut sphere.material);
-
-            ui.separator();
-            if ui.button("Delete").clicked() {
-                delete = Some(i);
-            }
-        });
-    }
-
-    if let Some(delete) = delete {
-        app.spheres.remove(delete);
-    }
-
-    if ui.button("New").clicked() {
-        app.spheres.push(Sphere::default());
-    }
-
-    if hash(&app.spheres) != old_spheres {
-        app.invalidate_accumulation();
-        app.sphere_buffer.upload_shrink(&app.spheres).unwrap();
     }
 }
 
