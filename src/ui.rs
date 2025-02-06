@@ -55,7 +55,6 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
                 });
             });
 
-            ui.collapsing("Spheres", |ui| sphere_settings(app, ui));
             ui.collapsing("Models", |ui| model_settings(app, ui));
             ui.collapsing("Camera", |ui| app.uniform.camera.ui(ui));
 
@@ -85,73 +84,32 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
     }
 }
 
-fn sphere_settings(app: &mut App, ui: &mut Ui) {
-    let old_spheres = hash(&app.spheres);
-    let mut delete = None;
-
-    for (i, sphere) in app.spheres.iter_mut().enumerate() {
-        let heading = format!("Sphere #{}", i + 1);
-        ui.collapsing(&heading, |ui| {
-            Grid::new(&heading).num_columns(2).show(ui, |ui| {
-                ui.label("Position");
-                vec3_dragger(ui, &mut sphere.position, |x| x.speed(0.01));
-                ui.end_row();
-
-                ui.label("Radius");
-                ui.add(DragValue::new(&mut sphere.radius).speed(0.01));
-                ui.end_row();
-            });
-
-            ui.separator();
-            material_settings(ui, &mut sphere.material);
-
-            ui.separator();
-            if ui.button("Delete").clicked() {
-                delete = Some(i);
-            }
-        });
-    }
-
-    if let Some(delete) = delete {
-        app.spheres.remove(delete);
-    }
-
-    if ui.button("New").clicked() {
-        app.spheres.push(Sphere::default());
-    }
-
-    if hash(&app.spheres) != old_spheres {
-        app.invalidate_accumulation();
-        app.sphere_buffer.upload_shrink(&app.spheres).unwrap();
-    }
-}
-
 fn model_settings(app: &mut App, ui: &mut Ui) {
-    let old_models = hash(&app.models);
-    for model in app.models.iter_mut() {
-        CollapsingHeader::new(&model.name)
-            .id_salt(model.id)
-            .show(ui, |ui| {
-                Grid::new(&model.name).num_columns(2).show(ui, |ui| {
-                    ui.label("Position");
-                    vec3_dragger(ui, &mut model.position, |x| x.speed(0.01));
-                    ui.end_row();
+    // let old_models = hash(&app.models);
+    // for model in app.models.iter_mut() {
+    //     CollapsingHeader::new(&model.name)
+    //         .id_salt(model.id)
+    //         .show(ui, |ui| {
+    //             Grid::new(&model.name).num_columns(2).show(ui, |ui| {
+    //                 ui.label("Position");
+    //                 vec3_dragger(ui, &mut model.position, |x| x.speed(0.01));
+    //                 ui.end_row();
 
-                    ui.label("Scale");
-                    vec3_dragger(ui, &mut model.scale, |x| x.speed(0.01));
-                    ui.end_row();
-                });
+    //                 ui.label("Scale");
+    //                 vec3_dragger(ui, &mut model.scale, |x| x.speed(0.01));
+    //                 ui.end_row();
+    //             });
 
-                ui.separator();
+    //             ui.separator();
 
-                material_settings(ui, &mut model.material);
-            });
-    }
+    //             material_settings(ui, &mut model.material);
+    //         });
+    // }
 
-    if hash(&app.models) != old_models {
-        app.invalidate_accumulation();
-        app.upload_models();
-    }
+    // if hash(&app.models) != old_models {
+    //     app.invalidate_accumulation();
+    //     app.upload_models();
+    // }
 }
 
 fn material_settings(ui: &mut Ui, material: &mut Material) {

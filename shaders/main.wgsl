@@ -1,12 +1,11 @@
 @group(0) @binding(0) var<uniform> ctx: Uniform;
 @group(0) @binding(1) var<storage, read_write> accumulation: array<vec3f>;
+@group(0) @binding(2) var acceleration: acceleration_structure;
 
 // @group(0) @binding(2) var<storage, read> spheres: array<Sphere>;
-
 // @group(0) @binding(3) var<storage, read> models: array<Model>;
 // @group(0) @binding(4) var<storage, read> nodes: array<BvhNode>;
 // @group(0) @binding(5) var<storage, read> faces: array<Triangle>;
-@group(0) @binding(2) var acceleration: acceleration_structure;
 
 const PI: f32 = 3.141592653589793;
 
@@ -40,20 +39,15 @@ fn sample(pos: vec2f) -> vec3f {
     var color = vec3(1.0);
 
     for (var bounce = 0u; bounce < ctx.max_bounces; bounce++) {
-        // let trace = trace_ray(ray);
         var rq: ray_query;
         rayQueryInitialize(&rq, acceleration, RayDesc(0, 0xFFu, 0.001, 3.40282347e+38f, ray.pos, ray.dir));
         rayQueryProceed(&rq);
 
-        let ray_intersection = rayQueryGetCommittedIntersection(&rq);
+        let intersection = rayQueryGetCommittedIntersection(&rq);
 
-
-        if ray_intersection.t < 0.0 {
-            // light += background_color(ray.dir) * color * ctx.enviroment;
-            light += vec3(0.3) * color * ctx.enviroment;
-            break;
-        } else {
-            light = vec3(1.0, 0.0, 0.0);
+        if intersection.kind == RAY_QUERY_INTERSECTION_NONE {
+            light += background_color(ray.dir) * color * ctx.enviroment;
+            // light += vec3(0.3) * color * ctx.enviroment;
             break;
         }
 
@@ -62,6 +56,7 @@ fn sample(pos: vec2f) -> vec3f {
         // let scatter = get_scattered_direction(ray, trace);
         // light += emitted * color;
         // color *= scatter.color;
+        color *= vec3(1.0, 0.5, 0.5);
 
         // ray = Ray(
         //     trace.hit.position + trace.hit.normal * 0.0001,

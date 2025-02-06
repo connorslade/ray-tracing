@@ -8,10 +8,9 @@ use compute::{
 use encase::ShaderType;
 use ordered_float::OrderedFloat;
 
-use crate::{bvh::BvhNode, camera::Camera};
+use crate::camera::Camera;
 
 pub type ModelBuffer = StorageBuffer<Vec<GpuModel>, Immutable>;
-pub type NodeBuffer = StorageBuffer<Vec<BvhNode>, Immutable>;
 pub type FaceBuffer = StorageBuffer<Vec<Triangle>, Immutable>;
 pub type SphereBuffer = StorageBuffer<Vec<Sphere>, Immutable>;
 
