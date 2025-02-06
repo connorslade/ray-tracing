@@ -53,6 +53,7 @@ impl Scene {
         let materials = materials?;
 
         let object_count = obj.len();
+        let mut primitives = Vec::new();
         for (i, model) in obj.into_iter().skip(3).take(2).enumerate() {
             println!(
                 " {} Loading `{}`",
@@ -74,16 +75,18 @@ impl Scene {
             );
             self.index.extend_from_slice(&mesh.indices);
 
-            self.geometry.push(Geometry {
-                transformation: Matrix4::identity(),
-                primitives: vec![GeometryPrimitive {
-                    first_vertex: first_vertex as u32,
-                    vertex_count: (self.verts.len() - first_vertex) as u32,
-                    first_index: first_index as u32,
-                    index_count: (self.index.len() - first_index) as u32,
-                }],
+            primitives.push(GeometryPrimitive {
+                first_vertex: first_vertex as u32,
+                vertex_count: (self.verts.len() - first_vertex) as u32,
+                first_index: first_index as u32,
+                index_count: (self.index.len() - first_index) as u32,
             });
         }
+
+        self.geometry.push(Geometry {
+            transformation: Matrix4::identity(),
+            primitives,
+        });
 
         Ok(())
     }
