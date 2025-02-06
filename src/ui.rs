@@ -2,7 +2,7 @@ use std::{fs::File, time::Instant};
 
 use compute::{
     export::{
-        egui::{Context, DragValue, Grid, Slider, Ui, Window},
+        egui::{CollapsingHeader, Context, DragValue, Grid, Slider, Ui, Window},
         nalgebra::{Vector2, Vector3},
     },
     interactive::GraphicsCtx,
@@ -129,21 +129,23 @@ fn sphere_settings(app: &mut App, ui: &mut Ui) {
 fn model_settings(app: &mut App, ui: &mut Ui) {
     let old_models = hash(&app.models);
     for model in app.models.iter_mut() {
-        ui.collapsing(&model.name, |ui| {
-            Grid::new(&model.name).num_columns(2).show(ui, |ui| {
-                ui.label("Position");
-                vec3_dragger(ui, &mut model.position, |x| x.speed(0.01));
-                ui.end_row();
+        CollapsingHeader::new(&model.name)
+            .id_salt(model.id)
+            .show(ui, |ui| {
+                Grid::new(&model.name).num_columns(2).show(ui, |ui| {
+                    ui.label("Position");
+                    vec3_dragger(ui, &mut model.position, |x| x.speed(0.01));
+                    ui.end_row();
 
-                ui.label("Scale");
-                vec3_dragger(ui, &mut model.scale, |x| x.speed(0.01));
-                ui.end_row();
+                    ui.label("Scale");
+                    vec3_dragger(ui, &mut model.scale, |x| x.speed(0.01));
+                    ui.end_row();
+                });
+
+                ui.separator();
+
+                material_settings(ui, &mut model.material);
             });
-
-            ui.separator();
-
-            material_settings(ui, &mut model.material);
-        });
     }
 
     if hash(&app.models) != old_models {

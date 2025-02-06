@@ -51,6 +51,7 @@ pub struct GpuModel {
 
 pub struct Model {
     pub name: String,
+    pub id: u32,
 
     pub material: Material,
     pub node_offset: u32,

@@ -6,6 +6,7 @@ use tobj::LoadOptions;
 
 use crate::{
     bvh::{Bvh, BvhNode},
+    misc::next_id,
     types::{FaceBuffer, Material, Model, ModelBuffer, NodeBuffer, Triangle},
 };
 
@@ -95,6 +96,7 @@ impl Scene {
 
             self.models.push(Model {
                 name: model.name,
+                id: next_id(),
                 material: Material {
                     diffuse_color: Vector3::new(diffuse[0], diffuse[1], diffuse[2]),
                     specular_color: Vector3::new(specular[0], specular[1], specular[2]),
