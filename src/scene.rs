@@ -1,4 +1,4 @@
-use std::{fmt::Debug, path::Path};
+use std::{fmt::Debug, mem, path::Path};
 
 use anyhow::{Ok, Result};
 use compute::{
@@ -6,7 +6,7 @@ use compute::{
         acceleration_structure::{AccelerationStructure, Geometry, GeometryPrimitive},
         BlasBuffer,
     },
-    export::nalgebra::{Matrix4, Vector3},
+    export::nalgebra::{Matrix4, Matrix4x3, Vector3},
     gpu::Gpu,
 };
 use tobj::LoadOptions;
@@ -17,7 +17,7 @@ use crate::{
 };
 
 pub struct Scene {
-    pub geometry: Vec<Geometry>,
+    pub primitives: Vec<GeometryPrimitive>,
     pub models: Vec<Model>,
 
     pub verts: Vec<Vertex>,
@@ -27,7 +27,7 @@ pub struct Scene {
 impl Scene {
     pub fn empty() -> Self {
         Self {
-            geometry: Vec::new(),
+            primitives: Vec::new(),
             models: Vec::new(),
 
             verts: Vec::new(),
@@ -36,22 +36,34 @@ impl Scene {
     }
 
     pub fn finish(
-        &self,
+        &mut self,
         gpu: &Gpu,
     ) -> Result<(
         ModelBuffer,
         BlasBuffer<Vertex>,
         BlasBuffer<u32>,
-        AccelerationStructure,
+        BlasBuffer<Matrix4x3<f32>>,
+        AccelerationStructure<Vertex>,
     )> {
         let vertex = gpu.create_blas(&self.verts)?;
         let index = gpu.create_blas(&self.index)?;
-        let acceleration = gpu.create_acceleration_structure(&vertex, &index, &self.geometry);
+        let transformation =
+            gpu.create_blas(&vec![Matrix4x3::identity(); self.primitives.len()])?;
+
+        let acceleration = gpu.create_acceleration_structure(
+            vertex.clone(),
+            index.clone(),
+            transformation.clone(),
+            vec![Geometry {
+                transformation: Matrix4::identity(),
+                primitives: mem::take(&mut self.primitives),
+            }],
+        );
 
         let models = self.models.iter().map(|x| x.to_gpu()).collect::<Vec<_>>();
         let models = gpu.create_storage_read(&models)?;
 
-        Ok((models, vertex, index, acceleration))
+        Ok((models, vertex, index, transformation, acceleration))
     }
 
     pub fn load(&mut self, path: impl AsRef<Path> + Debug) -> Result<()> {
@@ -68,7 +80,6 @@ impl Scene {
         let materials = materials?;
 
         let object_count = obj.len();
-        let mut primitives = Vec::new();
         for (i, model) in obj.into_iter().enumerate() {
             println!(
                 " {} Loading `{}`",
@@ -90,11 +101,12 @@ impl Scene {
             );
             self.index.extend_from_slice(&mesh.indices);
 
-            primitives.push(GeometryPrimitive {
+            self.primitives.push(GeometryPrimitive {
                 first_vertex: first_vertex as u32,
                 vertex_count: (self.verts.len() - first_vertex) as u32,
                 first_index: first_index as u32,
                 index_count: (self.index.len() - first_index) as u32,
+                transformation_offset: self.primitives.len() as u64,
             });
 
             let material = &materials[model.mesh.material_id.unwrap()];
@@ -129,11 +141,6 @@ impl Scene {
                 scale: Vector3::repeat(1.0),
             });
         }
-
-        self.geometry.push(Geometry {
-            transformation: Matrix4::identity(),
-            primitives,
-        });
 
         Ok(())
     }

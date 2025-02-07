@@ -33,9 +33,9 @@ fn main() -> Result<()> {
         .build()?;
 
     let mut scene = Scene::empty();
-    scene.load("scenes/cornell-box.obj")?;
+    scene.load("scenes/mirascope.obj")?;
 
-    let (model_buffer, vertex, index, acceleration) = scene.finish(&gpu)?;
+    let (model_buffer, vertex, index, transform, acceleration) = scene.finish(&gpu)?;
     let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
     let accumulation_buffer = gpu.create_storage::<Vec<Vector3<f32>>>(&vec![])?;
 
@@ -65,6 +65,8 @@ fn main() -> Result<()> {
             accumulation_buffer,
 
             model_buffer,
+            acceleration_structure: acceleration,
+            transform_buffer: transform,
             uniform: Uniform {
                 window: Vector2::zeros(),
                 camera: Camera::default(),

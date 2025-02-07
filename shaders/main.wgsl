@@ -67,9 +67,7 @@ fn trace_ray(ray: Ray) -> Intersection {
     rayQueryProceed(&rq);
 
     let intersection = rayQueryGetCommittedIntersection(&rq);
-    if intersection.kind == RAY_QUERY_INTERSECTION_NONE {
-        return intersection_miss();
-    }
+    if intersection.kind == RAY_QUERY_INTERSECTION_NONE { return intersection_miss(); }
 
     let model = models[intersection.geometry_index];
     let index_start = model.index_start + intersection.primitive_index * 3;
@@ -79,9 +77,9 @@ fn trace_ray(ray: Ray) -> Intersection {
     let v2 = vertex[model.vertex_start + index[index_start + 2]];
 
     let bary = vec3f(1.0 - intersection.barycentrics.x - intersection.barycentrics.y, intersection.barycentrics);
-
     let normal = v0.normal * bary.x + v1.normal * bary.y + v2.normal * bary.z;
     let position = v0.position * bary.x + v1.position * bary.y + v2.position * bary.z;
 
-    return Intersection(true, model.material, normal, position);
+    let transformed_position = (intersection.object_to_world * vec4f(position, 1.0)).xyz;
+    return Intersection(true, model.material, normal, transformed_position);
 }

@@ -2,8 +2,8 @@ use std::hash::{Hash, Hasher};
 
 use bitflags::bitflags;
 use compute::{
-    bindings::StorageBuffer,
-    export::nalgebra::{Vector2, Vector3},
+    bindings::{BlasBuffer, StorageBuffer},
+    export::nalgebra::{Matrix4x3, Vector2, Vector3},
     misc::mutability::Immutable,
 };
 use encase::ShaderType;
@@ -12,6 +12,7 @@ use ordered_float::OrderedFloat;
 use crate::camera::Camera;
 
 pub type ModelBuffer = StorageBuffer<Vec<GpuModel>, Immutable>;
+pub type TransformBuffer = BlasBuffer<Matrix4x3<f32>>;
 
 #[derive(Default, ShaderType)]
 pub struct Uniform {

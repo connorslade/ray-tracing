@@ -7,10 +7,10 @@ use std::{
 };
 
 use compute::{
-    bindings::{StorageBuffer, UniformBuffer},
+    bindings::{acceleration_structure::AccelerationStructure, StorageBuffer, UniformBuffer},
     export::{
         egui::Context,
-        nalgebra::{Vector2, Vector3},
+        nalgebra::{Matrix4, Matrix4x3, Vector2, Vector3},
         wgpu::RenderPass,
     },
     interactive::{GraphicsCtx, Interactive},
@@ -19,7 +19,7 @@ use compute::{
 };
 
 use crate::{
-    types::{Model, ModelBuffer, Uniform},
+    types::{Model, ModelBuffer, TransformBuffer, Uniform, Vertex},
     ui::ui,
 };
 
@@ -27,13 +27,16 @@ pub struct App {
     pub compute_pipeline: ComputePipeline,
     pub render_pipeline: RenderPipeline,
     pub compute_running: Arc<AtomicBool>,
-
-    pub uniform_buffer: UniformBuffer<Uniform>,
     pub accumulation_buffer: StorageBuffer<Vec<Vector3<f32>>, Mutable>,
-    pub model_buffer: ModelBuffer,
+
     pub uniform: Uniform,
+    pub uniform_buffer: UniformBuffer<Uniform>,
 
     pub models: Vec<Model>,
+    pub acceleration_structure: AccelerationStructure<Vertex>,
+    pub model_buffer: ModelBuffer,
+    pub transform_buffer: TransformBuffer,
+
     pub last_frame: Instant,
     pub last_window: Vector2<u32>,
     pub accumulate: bool,
@@ -48,6 +51,18 @@ impl App {
     pub fn upload_models(&self) {
         let gpu_models = self.models.iter().map(|x| x.to_gpu()).collect::<Vec<_>>();
         self.model_buffer.upload_shrink(&gpu_models).unwrap();
+
+        let transformations = self
+            .models
+            .iter()
+            .map(|model| {
+                let transformation = Matrix4::new_nonuniform_scaling(&model.scale)
+                    * Matrix4::new_translation(&model.position);
+                transformation.remove_row(3).transpose()
+            })
+            .collect::<Vec<_>>();
+        self.transform_buffer.upload(&transformations).unwrap();
+        self.acceleration_structure.update();
     }
 }
 
