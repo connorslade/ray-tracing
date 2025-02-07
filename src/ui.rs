@@ -105,6 +105,10 @@ fn model_settings(app: &mut App, ui: &mut Ui) {
                     ui.label("Scale");
                     vec3_dragger(ui, &mut model.scale, |x| x.speed(0.01));
                     ui.end_row();
+
+                    ui.label("Rotation");
+                    vec3_dragger(ui, &mut model.rotation, |x| x.speed(0.01));
+                    ui.end_row();
                 });
 
                 ui.separator();

@@ -10,7 +10,7 @@ use compute::{
     bindings::{acceleration_structure::AccelerationStructure, StorageBuffer, UniformBuffer},
     export::{
         egui::Context,
-        nalgebra::{Matrix4, Matrix4x3, Vector2, Vector3},
+        nalgebra::{Matrix4, Vector2, Vector3},
         wgpu::RenderPass,
     },
     interactive::{GraphicsCtx, Interactive},
@@ -57,6 +57,7 @@ impl App {
             .iter()
             .map(|model| {
                 let transformation = Matrix4::new_nonuniform_scaling(&model.scale)
+                    * Matrix4::new_rotation(model.rotation)
                     * Matrix4::new_translation(&model.position);
                 transformation.remove_row(3).transpose()
             })

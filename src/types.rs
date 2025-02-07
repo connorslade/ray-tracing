@@ -62,6 +62,7 @@ pub struct Model {
 
     pub position: Vector3<f32>,
     pub scale: Vector3<f32>,
+    pub rotation: Vector3<f32>,
 }
 
 #[derive(ShaderType)]
@@ -106,5 +107,6 @@ impl Hash for Model {
         self.material.hash(state);
         self.position.map(OrderedFloat).hash(state);
         self.scale.map(OrderedFloat).hash(state);
+        self.rotation.map(OrderedFloat).hash(state);
     }
 }

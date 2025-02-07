@@ -24,6 +24,14 @@ pub struct Scene {
     pub index: Vec<u32>,
 }
 
+pub struct SceneBuffers {
+    pub models: ModelBuffer,
+    pub vertex: BlasBuffer<Vertex>,
+    pub index: BlasBuffer<u32>,
+    pub transformation: BlasBuffer<Matrix4x3<f32>>,
+    pub acceleration: AccelerationStructure<Vertex>,
+}
+
 impl Scene {
     pub fn empty() -> Self {
         Self {
@@ -35,16 +43,7 @@ impl Scene {
         }
     }
 
-    pub fn finish(
-        &mut self,
-        gpu: &Gpu,
-    ) -> Result<(
-        ModelBuffer,
-        BlasBuffer<Vertex>,
-        BlasBuffer<u32>,
-        BlasBuffer<Matrix4x3<f32>>,
-        AccelerationStructure<Vertex>,
-    )> {
+    pub fn finish(&mut self, gpu: &Gpu) -> Result<SceneBuffers> {
         let vertex = gpu.create_blas(&self.verts)?;
         let index = gpu.create_blas(&self.index)?;
         let transformation =
@@ -63,7 +62,13 @@ impl Scene {
         let models = self.models.iter().map(|x| x.to_gpu()).collect::<Vec<_>>();
         let models = gpu.create_storage_read(&models)?;
 
-        Ok((models, vertex, index, transformation, acceleration))
+        Ok(SceneBuffers {
+            models,
+            vertex,
+            index,
+            transformation,
+            acceleration,
+        })
     }
 
     pub fn load(&mut self, path: impl AsRef<Path> + Debug) -> Result<()> {
@@ -139,6 +144,7 @@ impl Scene {
 
                 position: Vector3::zeros(),
                 scale: Vector3::repeat(1.0),
+                rotation: Vector3::repeat(0.0),
             });
         }
 

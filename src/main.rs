@@ -35,7 +35,7 @@ fn main() -> Result<()> {
     let mut scene = Scene::empty();
     scene.load("scenes/mirascope.obj")?;
 
-    let (model_buffer, vertex, index, transform, acceleration) = scene.finish(&gpu)?;
+    let buffers = scene.finish(&gpu)?;
     let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
     let accumulation_buffer = gpu.create_storage::<Vec<Vector3<f32>>>(&vec![])?;
 
@@ -43,10 +43,10 @@ fn main() -> Result<()> {
         .compute_pipeline(COMPUTE_SOURCE)
         .bind_buffer(&uniform_buffer)
         .bind_buffer(&accumulation_buffer)
-        .bind_buffer(&model_buffer)
-        .bind_buffer(&acceleration)
-        .bind_buffer(&vertex)
-        .bind_buffer(&index)
+        .bind_buffer(&buffers.models)
+        .bind_buffer(&buffers.acceleration)
+        .bind_buffer(&buffers.vertex)
+        .bind_buffer(&buffers.index)
         .finish();
     let render_pipeline = gpu
         .render_pipeline(RENDER_SOURCE)
@@ -64,9 +64,9 @@ fn main() -> Result<()> {
             uniform_buffer,
             accumulation_buffer,
 
-            model_buffer,
-            acceleration_structure: acceleration,
-            transform_buffer: transform,
+            model_buffer: buffers.models,
+            acceleration_structure: buffers.acceleration,
+            transform_buffer: buffers.transformation,
             uniform: Uniform {
                 window: Vector2::zeros(),
                 camera: Camera::default(),
