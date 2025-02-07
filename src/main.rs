@@ -24,7 +24,7 @@ mod ui;
 use app::App;
 use consts::{COMPUTE_SOURCE, RENDER_SOURCE};
 use scene::Scene;
-use types::Uniform;
+use types::{Flags, Uniform};
 
 fn main() -> Result<()> {
     let gpu = Gpu::builder()
@@ -33,7 +33,7 @@ fn main() -> Result<()> {
         .build()?;
 
     let mut scene = Scene::empty();
-    scene.load("scenes/dragon.obj")?;
+    scene.load("scenes/cornell-box.obj")?;
 
     let (model_buffer, vertex, index, acceleration) = scene.finish(&gpu)?;
     let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
@@ -70,6 +70,7 @@ fn main() -> Result<()> {
                 camera: Camera::default(),
                 frame: 0,
                 accumulation_frame: 1,
+                flags: Flags::CULL_BACKFACES.bits(),
 
                 environment: 1.0,
                 max_bounces: 10,

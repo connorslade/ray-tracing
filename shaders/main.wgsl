@@ -6,7 +6,6 @@
 @group(0) @binding(4) var<storage, read> vertex: array<Vertex>;
 @group(0) @binding(5) var<storage, read> index: array<u32>;
 
-
 const PI: f32 = 3.141592653589793;
 
 @compute
@@ -39,38 +38,50 @@ fn sample(pos: vec2f) -> vec3f {
     var color = vec3(1.0);
 
     for (var bounce = 0u; bounce < ctx.max_bounces; bounce++) {
-        var rq: ray_query;
-        rayQueryInitialize(&rq, acceleration, RayDesc(0, 0xFFu, 0.001, 3.40282347e+38f, ray.pos, ray.dir));
-        rayQueryProceed(&rq);
+        let trace = trace_ray(ray);
 
-        let intersection = rayQueryGetCommittedIntersection(&rq);
-        let model = models[intersection.geometry_index];
-
-        let index_start = model.index_start + intersection.primitive_index * 3;
-
-        let v0 = vertex[model.vertex_start + index[index_start]];
-        let v1 = vertex[model.vertex_start + index[index_start + 1]];
-        let v2 = vertex[model.vertex_start + index[index_start + 2]];
-
-        let bary = vec3f(1.0 - intersection.barycentrics.x - intersection.barycentrics.y, intersection.barycentrics);
-
-        let normal = v0.normal * bary.x + v1.normal * bary.y + v2.normal * bary.z;
-        let position = v0.position * bary.x + v1.position * bary.y + v2.position * bary.z;
-
-        if intersection.kind == RAY_QUERY_INTERSECTION_NONE {
+        if !trace.hit {
             light += background_color(ray.dir) * color * ctx.enviroment;
             // light += vec3(0.3) * color * ctx.enviroment;
             break;
         }
 
-        let emitted = model.material.emission_color * model.material.emission_strength;
-
-        let scatter = get_scattered_direction(ray, normal, model.material);
+        let emitted = trace.material.emission_color * trace.material.emission_strength;
+        let scatter = get_scattered_direction(ray, trace.normal, trace.material);
         light += emitted * color;
         color *= scatter.color;
 
-        ray = Ray(position + normal * 0.0001, scatter.direction);
+        ray = Ray(trace.position + trace.normal * 0.0001, scatter.direction);
     }
 
     return light;
+}
+
+// Docs for rayQuery functions: https://github.com/gfx-rs/wgpu/blob/trunk/etc/specs/ray_tracing.md
+fn trace_ray(ray: Ray) -> Intersection {
+    let flags = 0x10 * (ctx.flags & 1);
+    let ray_desc = RayDesc(flags, 0xFF, 0.001, 3.40282347e+38f, ray.pos, ray.dir);
+
+    var rq: ray_query;
+    rayQueryInitialize(&rq, acceleration, ray_desc);
+    rayQueryProceed(&rq);
+
+    let intersection = rayQueryGetCommittedIntersection(&rq);
+    if intersection.kind == RAY_QUERY_INTERSECTION_NONE {
+        return intersection_miss();
+    }
+
+    let model = models[intersection.geometry_index];
+    let index_start = model.index_start + intersection.primitive_index * 3;
+
+    let v0 = vertex[model.vertex_start + index[index_start]];
+    let v1 = vertex[model.vertex_start + index[index_start + 1]];
+    let v2 = vertex[model.vertex_start + index[index_start + 2]];
+
+    let bary = vec3f(1.0 - intersection.barycentrics.x - intersection.barycentrics.y, intersection.barycentrics);
+
+    let normal = v0.normal * bary.x + v1.normal * bary.y + v2.normal * bary.z;
+    let position = v0.position * bary.x + v1.position * bary.y + v2.position * bary.z;
+
+    return Intersection(true, model.material, normal, position);
 }

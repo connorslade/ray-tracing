@@ -3,10 +3,12 @@ struct Uniform {
     camera: Camera,
     frame: u32,
     accumulation_frame: u32,
+    flags: u32,
 
     enviroment: f32,
     max_bounces: u32,
     samples: u32,
+
 }
 
 struct Camera {
@@ -48,4 +50,19 @@ struct Ray {
 struct ScatterResult {
     direction: vec3f,
     color: vec3f
+}
+
+struct Intersection {
+    hit: bool,
+    material: Material,
+    normal: vec3f,
+    position: vec3f
+}
+
+fn intersection_miss() -> Intersection {
+    return Intersection(false, default_material(), vec3f(0.0), vec3f(0.0));
+}
+
+fn default_material() -> Material {
+    return Material(vec3(1.0), vec3(0.0), 0.0, 0.0, vec3(0.0), 0.0);
 }

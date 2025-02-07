@@ -1,5 +1,6 @@
 use std::hash::{Hash, Hasher};
 
+use bitflags::bitflags;
 use compute::{
     bindings::StorageBuffer,
     export::nalgebra::{Vector2, Vector3},
@@ -18,10 +19,17 @@ pub struct Uniform {
     pub camera: Camera,
     pub frame: u32,
     pub accumulation_frame: u32,
+    pub flags: u32,
 
     pub environment: f32,
     pub max_bounces: u32,
     pub samples: u32,
+}
+
+bitflags! {
+    pub struct Flags: u32 {
+        const CULL_BACKFACES = 1;
+    }
 }
 
 #[derive(ShaderType, Debug, Default, Clone, Copy, PartialEq)]
@@ -68,6 +76,16 @@ impl Model {
             vertex_start: self.vertex_start,
             index_start: self.index_start,
         }
+    }
+}
+
+impl Hash for Uniform {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.camera.hash(state);
+        state.write_u32(self.flags);
+        OrderedFloat(self.environment).hash(state);
+        state.write_u32(self.max_bounces);
+        state.write_u32(self.samples);
     }
 }
 

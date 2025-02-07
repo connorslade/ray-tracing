@@ -12,11 +12,13 @@ use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
 use crate::{
     app::App,
     misc::{hash, vec3_dragger},
-    types::Material,
+    types::{Flags, Material},
 };
 
 pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
-    let old_camera = hash(&app.uniform.camera);
+    let old_uniform = hash(&app.uniform);
+
+    let mut flags = Flags::from_bits_truncate(app.uniform.flags);
     app.uniform.camera.handle_movement(&gcx, ctx);
 
     Window::new("Ray Tracing")
@@ -46,6 +48,10 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
                 });
 
                 ui.checkbox(&mut app.accumulate, "Accumulate");
+
+                let mut cull_backfaces = flags.contains(Flags::CULL_BACKFACES);
+                ui.checkbox(&mut cull_backfaces, "Cull Backfaces");
+                flags.set(Flags::CULL_BACKFACES, cull_backfaces);
 
                 ui.separator();
 
@@ -79,7 +85,8 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
             }
         });
 
-    if hash(&app.uniform.camera) != old_camera {
+    app.uniform.flags = flags.bits();
+    if hash(&app.uniform) != old_uniform {
         app.invalidate_accumulation();
     }
 }
