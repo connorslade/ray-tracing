@@ -47,7 +47,6 @@ fn sample(pos: vec2f) -> vec3f {
         }
 
         // 0 => Metal; 1 => Dielectric
-        let next_pos = trace.position + trace.normal * 0.0001;
         if trace.material.tag == 0 {
             let material = trace.material.metal;
 
@@ -56,11 +55,13 @@ fn sample(pos: vec2f) -> vec3f {
             light += emitted * color;
             color *= scatter.color;
 
-            ray = Ray(next_pos, scatter.direction);
+            ray = Ray(trace.position + trace.normal * 0.0001, scatter.direction);
         } else if trace.material.tag == 1 {
             let material = trace.material.dielectric;
             let next_dir = get_scattered_direction_dielectric(ray, trace, material);
-            ray = Ray(trace.position, next_dir);
+
+            let offset_dir = trace.normal - 2.0 * trace.normal * f32(trace.front_face);
+            ray = Ray(trace.position + offset_dir * 0.0001, next_dir);
         }
     }
 

@@ -180,6 +180,10 @@ fn metal_material_settings(ui: &mut Ui, material: &mut MetalMaterial) {
 
 fn dielectric_material_settings(ui: &mut Ui, material: &mut DielectricMaterial) {
     ui.label("Refractive Index");
-    ui.add(DragValue::new(&mut material.refractive_index).speed(0.01));
+    ui.add(
+        DragValue::new(&mut material.refractive_index)
+            .range(0.1..=f32::MAX)
+            .speed(0.01),
+    );
     ui.end_row();
 }

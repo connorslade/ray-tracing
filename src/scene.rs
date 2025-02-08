@@ -12,7 +12,7 @@ use compute::{
 use tobj::LoadOptions;
 
 use crate::{
-    misc::next_id,
+    misc::{next_id, GetUnknownMaterialParam},
     types::{Material, MetalMaterial, Model, ModelBuffer, Vertex},
 };
 
@@ -115,26 +115,23 @@ impl Scene {
             });
 
             let material = &materials[model.mesh.material_id.unwrap()];
-            let diffuse = material.diffuse.unwrap();
-            let specular = material.specular.unwrap();
-            let shininess = material.shininess.unwrap() / 1000.0;
-            let emission = material.unknown_param.get("Ke").unwrap();
-            let emission = emission
-                .split_ascii_whitespace()
-                .map(|x| x.parse::<f32>().unwrap())
-                .collect::<Vec<_>>();
-            let emission = Vector3::new(emission[0], emission[1], emission[2]);
+
+            let diffuse = material.diffuse.unwrap_or_default();
+            let specular = material.specular.unwrap_or_default();
+            let specular_probability = material.get_unknown("Pm");
+            let roughness = material.get_unknown("Pr");
+            let emission: Vector3<_> = material.get_unknown("Ke");
 
             self.models.push(Model {
                 name: model.name,
                 id: next_id(),
 
                 material: Material::metal(MetalMaterial {
-                    diffuse_color: Vector3::new(diffuse[0], diffuse[1], diffuse[2]),
-                    specular_color: Vector3::new(specular[0], specular[1], specular[2]),
+                    diffuse_color: Vector3::from_row_slice(&diffuse),
+                    specular_color: Vector3::from_row_slice(&specular),
 
-                    specular_probability: shininess,
-                    roughness: 1.0,
+                    specular_probability,
+                    roughness,
 
                     emission_color: emission.try_normalize(0.0).unwrap_or_default(),
                     emission_strength: emission.magnitude(),
