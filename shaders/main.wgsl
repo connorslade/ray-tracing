@@ -52,29 +52,15 @@ fn sample(pos: vec2f) -> vec3f {
             let material = trace.material.metal;
 
             let emitted = material.emission_color * material.emission_strength;
-            let scatter = get_scattered_direction(ray, trace.normal, material);
+            let scatter = get_scattered_direction_metal(ray, trace.normal, material);
             light += emitted * color;
             color *= scatter.color;
 
             ray = Ray(next_pos, scatter.direction);
         } else if trace.material.tag == 1 {
             let material = trace.material.dielectric;
-
-            var refractive_index = material.refractive_index;
-            if trace.front_face { refractive_index = 1.0 / refractive_index; }
-
-            let cos_theta = min(dot(-ray.dir, trace.normal), 1.0);
-            let sin_theta = sqrt(1.0 - cos_theta * cos_theta);
-
-            let must_reflect = refractive_index * sin_theta > 1.0;
-            let can_reflect = schlick_approximation(cos_theta, refractive_index);
-            if must_reflect || can_reflect > rand() {
-                let reflected = reflect(ray.dir, trace.normal);
-                ray = Ray(next_pos, reflected);
-            } else {
-                let refracted = refract(ray.dir, trace.normal, refractive_index);
-                ray = Ray(next_pos, refracted);
-            }
+            let next_dir = get_scattered_direction_dielectric(ray, trace, material);
+            ray = Ray(trace.position, next_dir);
         }
     }
 

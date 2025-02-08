@@ -9,7 +9,7 @@ fn ray_direction(pos: vec2f) -> vec3f {
     return normalize(forward + right * uv.x + up * uv.y);
 }
 
-fn get_scattered_direction(ray: Ray, normal: vec3f, material: MetalMaterial) -> ScatterResult {
+fn get_scattered_direction_metal(ray: Ray, normal: vec3f, material: MetalMaterial) -> ScatterResult {
     let is_specular = f32(rand() < material.specular_probability);
     let smoothness = 1.0 - material.roughness;
 
@@ -20,6 +20,23 @@ fn get_scattered_direction(ray: Ray, normal: vec3f, material: MetalMaterial) -> 
         mix(diffuse, specular, smoothness * is_specular),
         mix(material.diffuse_color, material.specular_color, is_specular)
     );
+}
+
+fn get_scattered_direction_dielectric(ray: Ray, trace: Intersection, material: DielectricMaterial) -> vec3f {
+    let normal = faceForward(trace.normal, trace.normal, ray.dir);
+
+    var refractive_index = material.refractive_index;
+    if trace.front_face { refractive_index = 1.0 / material.refractive_index; }
+
+    let cos_theta = min(dot(-ray.dir, normal), 1.0);
+    let sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+
+    let must_reflect = refractive_index * sin_theta > 1.0;
+    let reflect_prob = schlick_approximation(cos_theta, refractive_index);
+    let reflect = must_reflect || reflect_prob > rand();
+
+    if reflect { return reflect(ray.dir, normal); }
+    else { return refract(ray.dir, normal, refractive_index); }
 }
 
 fn camera_direction() -> vec3f {

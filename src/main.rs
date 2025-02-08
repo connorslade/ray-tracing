@@ -83,7 +83,7 @@ fn main() -> Result<()> {
             last_frame: Instant::now(),
             last_window: Vector2::zeros(),
             accumulate: true,
-            screen_fraction: 16,
+            screen_fraction: 2,
         },
     )
     .run()?;
