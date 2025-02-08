@@ -13,7 +13,7 @@ use tobj::LoadOptions;
 
 use crate::{
     misc::next_id,
-    types::{Material, Model, ModelBuffer, Vertex},
+    types::{Material, MetalMaterial, Model, ModelBuffer, Vertex},
 };
 
 pub struct Scene {
@@ -129,7 +129,7 @@ impl Scene {
                 name: model.name,
                 id: next_id(),
 
-                material: Material {
+                material: Material::metal(MetalMaterial {
                     diffuse_color: Vector3::new(diffuse[0], diffuse[1], diffuse[2]),
                     specular_color: Vector3::new(specular[0], specular[1], specular[2]),
 
@@ -138,7 +138,7 @@ impl Scene {
 
                     emission_color: emission.try_normalize(0.0).unwrap_or_default(),
                     emission_strength: emission.magnitude(),
-                },
+                }),
                 vertex_start: first_vertex as u32,
                 index_start: first_index as u32,
 

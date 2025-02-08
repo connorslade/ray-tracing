@@ -35,6 +35,14 @@ bitflags! {
 
 #[derive(ShaderType, Debug, Default, Clone, Copy, PartialEq)]
 pub struct Material {
+    pub tag: u32,
+
+    pub metal: MetalMaterial,
+    pub dielectric: DielectricMaterial,
+}
+
+#[derive(ShaderType, Debug, Default, Clone, Copy, PartialEq)]
+pub struct MetalMaterial {
     pub diffuse_color: Vector3<f32>,
     pub specular_color: Vector3<f32>,
 
@@ -43,6 +51,11 @@ pub struct Material {
 
     pub emission_color: Vector3<f32>,
     pub emission_strength: f32,
+}
+
+#[derive(ShaderType, Debug, Default, Clone, Copy, PartialEq)]
+pub struct DielectricMaterial {
+    pub refractive_index: f32,
 }
 
 #[derive(ShaderType, Default, Clone, Copy, PartialEq)]
@@ -81,6 +94,24 @@ impl Model {
     }
 }
 
+impl Material {
+    pub fn metal(metal: MetalMaterial) -> Self {
+        Self {
+            tag: 0,
+            metal,
+            dielectric: DielectricMaterial::default(),
+        }
+    }
+
+    pub fn dielectric(dielectric: DielectricMaterial) -> Self {
+        Self {
+            tag: 1,
+            metal: MetalMaterial::default(),
+            dielectric,
+        }
+    }
+}
+
 impl Hash for Uniform {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.camera.hash(state);
@@ -93,12 +124,28 @@ impl Hash for Uniform {
 
 impl Hash for Material {
     fn hash<H: Hasher>(&self, state: &mut H) {
+        match self.tag {
+            0 => self.metal.hash(state),
+            1 => self.dielectric.hash(state),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Hash for MetalMaterial {
+    fn hash<H: Hasher>(&self, state: &mut H) {
         self.diffuse_color.map(OrderedFloat).hash(state);
         self.specular_color.map(OrderedFloat).hash(state);
         self.emission_color.map(OrderedFloat).hash(state);
         OrderedFloat(self.emission_strength).hash(state);
         OrderedFloat(self.roughness).hash(state);
         OrderedFloat(self.specular_probability).hash(state);
+    }
+}
+
+impl Hash for DielectricMaterial {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        OrderedFloat(self.refractive_index).hash(state);
     }
 }
 

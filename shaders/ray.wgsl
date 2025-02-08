@@ -9,7 +9,7 @@ fn ray_direction(pos: vec2f) -> vec3f {
     return normalize(forward + right * uv.x + up * uv.y);
 }
 
-fn get_scattered_direction(ray: Ray, normal: vec3f, material: Material) -> ScatterResult {
+fn get_scattered_direction(ray: Ray, normal: vec3f, material: MetalMaterial) -> ScatterResult {
     let is_specular = f32(rand() < material.specular_probability);
     let smoothness = 1.0 - material.roughness;
 

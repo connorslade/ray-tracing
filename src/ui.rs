@@ -12,7 +12,7 @@ use image::{codecs::png::PngEncoder, ExtendedColorType, ImageEncoder};
 use crate::{
     app::App,
     misc::{hash, vec3_dragger},
-    types::{Flags, Material},
+    types::{DielectricMaterial, Flags, Material, MetalMaterial},
 };
 
 pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
@@ -43,7 +43,7 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
                 });
 
                 ui.horizontal(|ui| {
-                    ui.add(Slider::new(&mut app.uniform.max_bounces, 2..=100));
+                    ui.add(Slider::new(&mut app.uniform.max_bounces, 1..=100));
                     ui.label("Max Bounces");
                 });
 
@@ -127,38 +127,59 @@ fn material_settings(ui: &mut Ui, material: &mut Material) {
     Grid::new("material_settings")
         .num_columns(2)
         .show(ui, |ui| {
-            ui.label("Roughness");
-            ui.add(Slider::new(&mut material.roughness, 0.0..=1.0));
-            ui.end_row();
-
-            ui.label("Specular Probability");
-            ui.add(Slider::new(&mut material.specular_probability, 0.0..=1.0));
-            ui.end_row();
-
-            ui.label("Diffuse Color");
-            let diffuse_color = material.diffuse_color;
-            let mut color = [diffuse_color.x, diffuse_color.y, diffuse_color.z];
-            ui.color_edit_button_rgb(&mut color);
-            material.diffuse_color = Vector3::new(color[0], color[1], color[2]);
-            ui.end_row();
-
-            ui.label("Specular Color");
-            let specular_color = material.specular_color;
-            let mut color = [specular_color.x, specular_color.y, specular_color.z];
-            ui.color_edit_button_rgb(&mut color);
-            material.specular_color = Vector3::new(color[0], color[1], color[2]);
-            ui.end_row();
-
-            let emission_color = material.emission_color;
-            let mut color = [emission_color.x, emission_color.y, emission_color.z];
-
-            ui.label("Emission");
+            ui.label("Material Type");
             ui.horizontal(|ui| {
-                ui.color_edit_button_rgb(&mut color);
-                ui.add(DragValue::new(&mut material.emission_strength));
+                ui.selectable_value(&mut material.tag, 0, "Metal");
+                ui.selectable_value(&mut material.tag, 1, "Dielectric");
             });
-
-            material.emission_color = Vector3::new(color[0], color[1], color[2]);
             ui.end_row();
+
+            match material.tag {
+                0 => metal_material_settings(ui, &mut material.metal),
+                1 => dielectric_material_settings(ui, &mut material.dielectric),
+                _ => unreachable!(),
+            }
         });
+}
+
+fn metal_material_settings(ui: &mut Ui, material: &mut MetalMaterial) {
+    ui.label("Roughness");
+    ui.add(Slider::new(&mut material.roughness, 0.0..=1.0));
+    ui.end_row();
+
+    ui.label("Specular Probability");
+    ui.add(Slider::new(&mut material.specular_probability, 0.0..=1.0));
+    ui.end_row();
+
+    ui.label("Diffuse Color");
+    let diffuse_color = material.diffuse_color;
+    let mut color = [diffuse_color.x, diffuse_color.y, diffuse_color.z];
+    ui.color_edit_button_rgb(&mut color);
+    material.diffuse_color = Vector3::new(color[0], color[1], color[2]);
+    ui.end_row();
+
+    ui.label("Specular Color");
+    let specular_color = material.specular_color;
+    let mut color = [specular_color.x, specular_color.y, specular_color.z];
+    ui.color_edit_button_rgb(&mut color);
+    material.specular_color = Vector3::new(color[0], color[1], color[2]);
+    ui.end_row();
+
+    let emission_color = material.emission_color;
+    let mut color = [emission_color.x, emission_color.y, emission_color.z];
+
+    ui.label("Emission");
+    ui.horizontal(|ui| {
+        ui.color_edit_button_rgb(&mut color);
+        ui.add(DragValue::new(&mut material.emission_strength));
+    });
+
+    material.emission_color = Vector3::new(color[0], color[1], color[2]);
+    ui.end_row();
+}
+
+fn dielectric_material_settings(ui: &mut Ui, material: &mut DielectricMaterial) {
+    ui.label("Refractive Index");
+    ui.add(DragValue::new(&mut material.refractive_index).speed(0.01));
+    ui.end_row();
 }

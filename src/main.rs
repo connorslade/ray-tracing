@@ -33,7 +33,7 @@ fn main() -> Result<()> {
         .build()?;
 
     let mut scene = Scene::empty();
-    scene.load("scenes/mirascope.obj")?;
+    scene.load("scenes/lens.obj")?;
 
     let buffers = scene.finish(&gpu)?;
     let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
@@ -72,7 +72,7 @@ fn main() -> Result<()> {
                 camera: Camera::default(),
                 frame: 0,
                 accumulation_frame: 1,
-                flags: Flags::CULL_BACKFACES.bits(),
+                flags: Flags::empty().bits(),
 
                 environment: 1.0,
                 max_bounces: 10,

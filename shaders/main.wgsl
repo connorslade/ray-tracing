@@ -37,7 +37,7 @@ fn sample(pos: vec2f) -> vec3f {
     var light = vec3(0.0);
     var color = vec3(1.0);
 
-    for (var bounce = 0u; bounce < ctx.max_bounces; bounce++) {
+    for (var bounce = 0u; bounce <= ctx.max_bounces; bounce++) {
         let trace = trace_ray(ray);
 
         if !trace.hit {
@@ -46,12 +46,36 @@ fn sample(pos: vec2f) -> vec3f {
             break;
         }
 
-        let emitted = trace.material.emission_color * trace.material.emission_strength;
-        let scatter = get_scattered_direction(ray, trace.normal, trace.material);
-        light += emitted * color;
-        color *= scatter.color;
+        // 0 => Metal; 1 => Dielectric
+        let next_pos = trace.position + trace.normal * 0.0001;
+        if trace.material.tag == 0 {
+            let material = trace.material.metal;
 
-        ray = Ray(trace.position + trace.normal * 0.0001, scatter.direction);
+            let emitted = material.emission_color * material.emission_strength;
+            let scatter = get_scattered_direction(ray, trace.normal, material);
+            light += emitted * color;
+            color *= scatter.color;
+
+            ray = Ray(next_pos, scatter.direction);
+        } else if trace.material.tag == 1 {
+            let material = trace.material.dielectric;
+
+            var refractive_index = material.refractive_index;
+            if trace.front_face { refractive_index = 1.0 / refractive_index; }
+
+            let cos_theta = min(dot(-ray.dir, trace.normal), 1.0);
+            let sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+
+            let must_reflect = refractive_index * sin_theta > 1.0;
+            let can_reflect = schlick_approximation(cos_theta, refractive_index);
+            if must_reflect || can_reflect > rand() {
+                let reflected = reflect(ray.dir, trace.normal);
+                ray = Ray(next_pos, reflected);
+            } else {
+                let refracted = refract(ray.dir, trace.normal, refractive_index);
+                ray = Ray(next_pos, refracted);
+            }
+        }
     }
 
     return light;
@@ -81,5 +105,13 @@ fn trace_ray(ray: Ray) -> Intersection {
     let position = v0.position * bary.x + v1.position * bary.y + v2.position * bary.z;
 
     let transformed_position = (intersection.object_to_world * vec4f(position, 1.0)).xyz;
-    return Intersection(true, model.material, normal, transformed_position);
+    let transformed_normal = (intersection.object_to_world * vec4f(normal, 0.0)).xyz;
+
+    return Intersection(true, intersection.front_face, model.material, transformed_normal, transformed_position);
+}
+
+fn schlick_approximation(cos_theta: f32, refractive_index: f32) -> f32 {
+    let r = (1.0 - refractive_index) / (1.0 + refractive_index);
+    let rs = r * r;
+    return rs + (1.0 - rs) * pow(1.0 - cos_theta, 5.0);
 }
