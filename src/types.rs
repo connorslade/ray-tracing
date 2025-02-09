@@ -45,7 +45,6 @@ pub struct Material {
 #[derive(ShaderType, Debug, Default, Clone, Copy, PartialEq)]
 pub struct MetalMaterial {
     pub diffuse_color: Vector3<f32>,
-    pub diffuse_texture: u32,
     pub specular_color: Vector3<f32>,
 
     pub specular_probability: f32,
@@ -53,6 +52,8 @@ pub struct MetalMaterial {
 
     pub emission_color: Vector3<f32>,
     pub emission_strength: f32,
+
+    pub diffuse_texture: u32,
 }
 
 #[derive(ShaderType, Debug, Default, Clone, Copy, PartialEq)]

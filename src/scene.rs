@@ -150,17 +150,21 @@ impl Scene {
             let roughness = material.get_unknown("Pr");
             let emission: Vector3<_> = material.get_unknown("Ke");
 
-            let diffuse_texture = if let Some(file) = &material.diffuse_texture {
-                let path = dir.join(file);
-                let file = BufReader::new(File::open(&path)?);
-                let format = ImageFormat::from_path(path)?;
+            let mut load_texture = |path: &Option<String>| {
+                if let Some(file) = path {
+                    let path = dir.join(strip_flags(file));
+                    let file = BufReader::new(File::open(&path).unwrap());
+                    let format = ImageFormat::from_path(path).unwrap();
 
-                let image = image::load(file, format)?.into_rgba8();
-                self.textures.push(image);
-                self.textures.len() as u32
-            } else {
-                0
+                    let image = image::load(file, format).unwrap().into_rgba8();
+                    self.textures.push(image);
+                    self.textures.len() as u32
+                } else {
+                    0
+                }
             };
+
+            let diffuse_texture = load_texture(&material.diffuse_texture);
 
             self.models.push(Model {
                 name: model.name,
@@ -168,7 +172,6 @@ impl Scene {
 
                 material: Material::metal(MetalMaterial {
                     diffuse_color: Vector3::from_row_slice(&diffuse),
-                    diffuse_texture,
                     specular_color: Vector3::from_row_slice(&specular),
 
                     specular_probability,
@@ -176,6 +179,8 @@ impl Scene {
 
                     emission_color: emission.try_normalize(0.0).unwrap_or_default(),
                     emission_strength: emission.magnitude(),
+
+                    diffuse_texture,
                 }),
                 vertex_start: first_vertex as u32,
                 index_start: first_index as u32,
@@ -188,4 +193,19 @@ impl Scene {
 
         Ok(())
     }
+}
+
+fn strip_flags(path: &str) -> &str {
+    let mut i = 0;
+
+    while path[i..].starts_with('-') {
+        for _ in 0..2 {
+            while !path[i..].starts_with(' ') {
+                i += 1;
+            }
+            i += 1;
+        }
+    }
+
+    &path[i..]
 }

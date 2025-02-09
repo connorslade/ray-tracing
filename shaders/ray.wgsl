@@ -17,9 +17,7 @@ fn get_scattered_direction_metal(ray: Ray, trace: Intersection, material: MetalM
     let specular = reflect(ray.dir, trace.normal);
 
     var diffuse_color = material.diffuse_color;
-    if material.diffuse_texture > 0 {
-        diffuse_color = textureSampleLevel(textures[material.diffuse_texture - 1], texture_sampler, trace.uv, 0.0).xyz;
-    };
+    if material.diffuse_texture > 0 { diffuse_color = sample_rgb(material.diffuse_texture - 1, trace.uv); }
 
     return ScatterResult(
         mix(diffuse, specular, smoothness * is_specular),
