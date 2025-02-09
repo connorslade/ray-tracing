@@ -9,7 +9,7 @@ use compute::{
     export::nalgebra::{Matrix4, Matrix4x3, Vector2, Vector3},
     gpu::Gpu,
 };
-use image::{DynamicImage, ImageFormat, ImageReader, RgbaImage};
+use image::{imageops, ImageFormat, RgbaImage};
 use tobj::LoadOptions;
 
 use crate::{
@@ -72,7 +72,7 @@ impl Scene {
             .map(|image| {
                 let size = Vector2::new(image.width(), image.height());
                 let texture = gpu.create_texture_2d(size);
-                texture.upload(size, image);
+                texture.upload(size, &imageops::flip_vertical(image));
                 texture
             })
             .collect::<Vec<_>>();
@@ -152,12 +152,10 @@ impl Scene {
 
             let diffuse_texture = if let Some(file) = &material.diffuse_texture {
                 let path = dir.join(file);
-                let file = File::open(&path).unwrap();
-                let format = ImageFormat::from_path(path).unwrap();
+                let file = BufReader::new(File::open(&path)?);
+                let format = ImageFormat::from_path(path)?;
 
-                let image = image::load(BufReader::new(file), format)
-                    .unwrap()
-                    .into_rgba8();
+                let image = image::load(file, format)?.into_rgba8();
                 self.textures.push(image);
                 self.textures.len() as u32
             } else {

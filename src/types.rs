@@ -104,14 +104,6 @@ impl Material {
             dielectric: DielectricMaterial::default(),
         }
     }
-
-    pub fn dielectric(dielectric: DielectricMaterial) -> Self {
-        Self {
-            tag: 1,
-            metal: MetalMaterial::default(),
-            dielectric,
-        }
-    }
 }
 
 impl Hash for Uniform {

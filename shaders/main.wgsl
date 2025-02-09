@@ -23,12 +23,10 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     seed = (pixel_idx * 2479898233) ^ (ctx.frame * 98379842);
 
     var color = vec3(0.0);
-    for (var i = 0u; i < ctx.samples; i++) {
-        color += sample(pos);
-    }
+    for (var i = 0u; i < ctx.samples; i++) { color += sample(pos); }
     color /= f32(ctx.samples);
 
-    let out = mix(accumulation[pixel_idx], color, 1.0 / f32(ctx.accumulation_frame));
+    let out = mix(accumulation[pixel_idx], color, 1.0 / f32(ctx.accumulation_frame + 1));
     accumulation[pixel_idx] = out;
 }
 

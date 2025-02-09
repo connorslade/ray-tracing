@@ -45,7 +45,7 @@ pub struct App {
 
 impl App {
     pub fn invalidate_accumulation(&mut self) {
-        self.uniform.accumulation_frame = 1;
+        self.uniform.accumulation_frame = 0;
     }
 
     pub fn upload_models(&self) {
@@ -80,14 +80,14 @@ impl Interactive for App {
         if !self.compute_running.swap(true, Ordering::Relaxed) {
             self.uniform.accumulation_frame += 1;
             if !self.accumulate {
-                self.uniform.accumulation_frame = 1;
+                self.uniform.accumulation_frame = 0;
             }
 
             let window = gcx.window.inner_size();
             let window = Vector2::new(window.width, window.height) / self.screen_fraction as u32;
 
             if self.last_window != window {
-                self.uniform.accumulation_frame = 1;
+                self.uniform.accumulation_frame = 0;
                 self.last_window = window;
                 self.accumulation_buffer
                     .upload_shrink(&vec![Vector3::zeros(); (window.x * window.y) as usize])
