@@ -5,6 +5,7 @@ struct Uniform {
     accumulation_frame: u32,
     flags: u32,
 
+    exposure: f32,
     enviroment: f32,
     max_bounces: u32,
     samples: u32,

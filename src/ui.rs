@@ -56,6 +56,15 @@ pub fn ui(app: &mut App, gcx: GraphicsCtx, ctx: &Context) {
                 ui.separator();
 
                 ui.horizontal(|ui| {
+                    ui.add(
+                        DragValue::new(&mut app.uniform.exposure)
+                            .range(0.0..=f32::MAX)
+                            .speed(0.01),
+                    );
+                    ui.label("Exposure");
+                });
+
+                ui.horizontal(|ui| {
                     ui.add(Slider::new(&mut app.uniform.environment, 0.0..=1.0));
                     ui.label("Environment");
                 });

@@ -81,6 +81,7 @@ fn main() -> Result<()> {
                 accumulation_frame: 1,
                 flags: Flags::empty().bits(),
 
+                exposure: 1.0,
                 environment: 1.0,
                 max_bounces: 10,
                 samples: 5,

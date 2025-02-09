@@ -22,6 +22,7 @@ pub struct Uniform {
     pub accumulation_frame: u32,
     pub flags: u32,
 
+    pub exposure: f32,
     pub environment: f32,
     pub max_bounces: u32,
     pub samples: u32,
@@ -110,6 +111,7 @@ impl Hash for Uniform {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.camera.hash(state);
         state.write_u32(self.flags);
+        OrderedFloat(self.exposure).hash(state);
         OrderedFloat(self.environment).hash(state);
         state.write_u32(self.max_bounces);
         state.write_u32(self.samples);

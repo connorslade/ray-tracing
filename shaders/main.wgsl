@@ -26,7 +26,9 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     for (var i = 0u; i < ctx.samples; i++) { color += sample(pos); }
     color /= f32(ctx.samples);
 
-    let out = mix(accumulation[pixel_idx], color, 1.0 / f32(ctx.accumulation_frame + 1));
+    let mapped = tone_map(color * ctx.exposure);
+
+    let out = mix(accumulation[pixel_idx], mapped, 1.0 / f32(ctx.accumulation_frame + 1));
     accumulation[pixel_idx] = out;
 }
 
@@ -103,4 +105,14 @@ fn schlick_approximation(cos_theta: f32, refractive_index: f32) -> f32 {
     let r = (1.0 - refractive_index) / (1.0 + refractive_index);
     let rs = r * r;
     return rs + (1.0 - rs) * pow(1.0 - cos_theta, 5.0);
+}
+
+// From https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+fn tone_map(x: vec3f) -> vec3f {
+    let a = 2.51;
+    let b = 0.03;
+    let c = 2.43;
+    let d = 0.59;
+    let e = 0.14;
+    return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
 }
