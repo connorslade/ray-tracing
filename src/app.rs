@@ -1,10 +1,4 @@
-use std::{
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    time::Instant,
-};
+use std::time::Instant;
 
 use compute::{
     bindings::{acceleration_structure::AccelerationStructure, StorageBuffer, UniformBuffer},
@@ -26,7 +20,6 @@ use crate::{
 pub struct App {
     pub compute_pipeline: ComputePipeline,
     pub render_pipeline: RenderPipeline,
-    pub compute_running: Arc<AtomicBool>,
     pub accumulation_buffer: StorageBuffer<Vec<Vector3<f32>>, Mutable>,
 
     pub uniform: Uniform,
@@ -38,6 +31,7 @@ pub struct App {
     pub transform_buffer: TransformBuffer,
 
     pub last_frame: Instant,
+    pub last_invaladation: Instant,
     pub last_window: Vector2<u32>,
     pub accumulate: bool,
     pub screen_fraction: u8,
@@ -45,6 +39,7 @@ pub struct App {
 
 impl App {
     pub fn invalidate_accumulation(&mut self) {
+        self.last_invaladation = Instant::now();
         self.uniform.accumulation_frame = 0;
     }
 
@@ -77,34 +72,32 @@ impl Interactive for App {
     }
 
     fn render(&mut self, gcx: GraphicsCtx, render_pass: &mut RenderPass) {
-        if !self.compute_running.swap(true, Ordering::Relaxed) {
-            self.uniform.accumulation_frame += 1;
-            if !self.accumulate {
-                self.uniform.accumulation_frame = 0;
-            }
+        let screen_fraction =
+            1.0 + (4.0 - 1.0) * (1.0 - self.last_invaladation.elapsed().as_secs_f32().min(1.0));
 
-            let window = gcx.window.inner_size();
-            let window = Vector2::new(window.width, window.height) / self.screen_fraction as u32;
-
-            if self.last_window != window {
-                self.uniform.accumulation_frame = 0;
-                self.last_window = window;
-                self.accumulation_buffer
-                    .upload_shrink(&vec![Vector3::zeros(); (window.x * window.y) as usize])
-                    .unwrap();
-            }
-
-            self.uniform.window = window;
-            self.uniform.frame += 1;
-            self.uniform_buffer.upload(&self.uniform).unwrap();
-
-            let compute_running = self.compute_running.clone();
-            self.compute_pipeline.queue_dispatch_callback(
-                Vector3::new(window.x.div_ceil(8), window.y.div_ceil(8), 1),
-                move || compute_running.store(false, Ordering::Relaxed),
-            );
+        self.uniform.accumulation_frame += 1;
+        if !self.accumulate {
+            self.uniform.accumulation_frame = 0;
         }
 
+        let window = gcx.window.inner_size();
+        let window = Vector2::new(window.width, window.height)
+            / (self.screen_fraction as u32).max(screen_fraction as u32);
+
+        if self.last_window != window {
+            self.uniform.accumulation_frame = 0;
+            self.last_window = window;
+            self.accumulation_buffer
+                .upload_shrink(&vec![Vector3::zeros(); (window.x * window.y) as usize])
+                .unwrap();
+        }
+
+        self.uniform.window = window;
+        self.uniform.frame += 1;
+        self.uniform_buffer.upload(&self.uniform).unwrap();
+
         self.render_pipeline.draw_quad(render_pass, 0..1);
+        self.compute_pipeline
+            .dispatch(Vector3::new(window.x.div_ceil(8), window.y.div_ceil(8), 1));
     }
 }

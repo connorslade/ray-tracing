@@ -1,7 +1,4 @@
-use std::{
-    sync::{atomic::AtomicBool, Arc},
-    time::Instant,
-};
+use std::time::Instant;
 
 use anyhow::{Ok, Result};
 use camera::Camera;
@@ -66,7 +63,6 @@ fn main() -> Result<()> {
         App {
             compute_pipeline,
             render_pipeline,
-            compute_running: Arc::new(AtomicBool::new(false)),
 
             uniform_buffer,
             accumulation_buffer,
@@ -89,6 +85,7 @@ fn main() -> Result<()> {
 
             models: scene.models,
             last_frame: Instant::now(),
+            last_invaladation: Instant::now(),
             last_window: Vector2::zeros(),
             accumulate: true,
             screen_fraction: 2,
