@@ -1,14 +1,15 @@
-use std::{fmt::Debug, mem, path::Path};
+use std::{fs::File, io::BufReader, mem, path::Path};
 
 use anyhow::{Ok, Result};
 use compute::{
     bindings::{
         acceleration_structure::{AccelerationStructure, Geometry, GeometryPrimitive},
-        BlasBuffer,
+        BlasBuffer, TextureCollection,
     },
-    export::nalgebra::{Matrix4, Matrix4x3, Vector3},
+    export::nalgebra::{Matrix4, Matrix4x3, Vector2, Vector3},
     gpu::Gpu,
 };
+use image::{DynamicImage, ImageFormat, ImageReader, RgbaImage};
 use tobj::LoadOptions;
 
 use crate::{
@@ -19,6 +20,7 @@ use crate::{
 pub struct Scene {
     pub primitives: Vec<GeometryPrimitive>,
     pub models: Vec<Model>,
+    pub textures: Vec<RgbaImage>,
 
     pub verts: Vec<Vertex>,
     pub index: Vec<u32>,
@@ -30,6 +32,7 @@ pub struct SceneBuffers {
     pub index: BlasBuffer<u32>,
     pub transformation: BlasBuffer<Matrix4x3<f32>>,
     pub acceleration: AccelerationStructure<Vertex>,
+    pub textures: TextureCollection,
 }
 
 impl Scene {
@@ -37,6 +40,7 @@ impl Scene {
         Self {
             primitives: Vec::new(),
             models: Vec::new(),
+            textures: Vec::new(),
 
             verts: Vec::new(),
             index: Vec::new(),
@@ -62,16 +66,31 @@ impl Scene {
         let models = self.models.iter().map(|x| x.to_gpu()).collect::<Vec<_>>();
         let models = gpu.create_storage_read(&models)?;
 
+        let textures = self
+            .textures
+            .iter()
+            .map(|image| {
+                let size = Vector2::new(image.width(), image.height());
+                let texture = gpu.create_texture_2d(size);
+                texture.upload(size, image);
+                texture
+            })
+            .collect::<Vec<_>>();
+        let textures = gpu.create_texture_collection(&textures);
+
         Ok(SceneBuffers {
             models,
             vertex,
             index,
             transformation,
             acceleration,
+            textures,
         })
     }
 
-    pub fn load(&mut self, path: impl AsRef<Path> + Debug) -> Result<()> {
+    pub fn load(&mut self, path: impl AsRef<Path>) -> Result<()> {
+        let path = path.as_ref();
+        let dir = path.parent().unwrap();
         println!("[*] Loading {path:?}");
 
         let (obj, materials) = tobj::load_obj(
@@ -95,15 +114,24 @@ impl Scene {
             let (first_index, first_vertex) = (self.index.len(), self.verts.len());
             let mesh = &model.mesh;
 
-            self.verts.extend(
-                mesh.positions
-                    .chunks_exact(3)
-                    .zip(mesh.normals.chunks_exact(3))
-                    .map(|(pos, normal)| Vertex {
+            let verts = mesh
+                .positions
+                .chunks_exact(3)
+                .zip(mesh.normals.chunks_exact(3))
+                .enumerate()
+                .map(|(idx, (pos, normal))| {
+                    let texcoords = &mesh
+                        .texcoords
+                        .get(idx * 2..idx * 2 + 2)
+                        .unwrap_or(&[0.0, 0.0]);
+
+                    Vertex {
                         position: Vector3::new(pos[0], pos[1], pos[2]),
                         normal: Vector3::new(normal[0], normal[1], normal[2]),
-                    }),
-            );
+                        uv: Vector2::new(texcoords[0], texcoords[1]),
+                    }
+                });
+            self.verts.extend(verts);
             self.index.extend_from_slice(&mesh.indices);
 
             self.primitives.push(GeometryPrimitive {
@@ -122,12 +150,27 @@ impl Scene {
             let roughness = material.get_unknown("Pr");
             let emission: Vector3<_> = material.get_unknown("Ke");
 
+            let diffuse_texture = if let Some(file) = &material.diffuse_texture {
+                let path = dir.join(file);
+                let file = File::open(&path).unwrap();
+                let format = ImageFormat::from_path(path).unwrap();
+
+                let image = image::load(BufReader::new(file), format)
+                    .unwrap()
+                    .into_rgba8();
+                self.textures.push(image);
+                self.textures.len() as u32
+            } else {
+                0
+            };
+
             self.models.push(Model {
                 name: model.name,
                 id: next_id(),
 
                 material: Material::metal(MetalMaterial {
                     diffuse_color: Vector3::from_row_slice(&diffuse),
+                    diffuse_texture,
                     specular_color: Vector3::from_row_slice(&specular),
 
                     specular_probability,

@@ -4,15 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# compute = { path = "../compute", features = ["interactive"] }
-compute = { git = "https://github.com/connorslade/compute", features = [
-    "interactive",
-] }
+compute = { path = "../compute", features = ["interactive"] }
+# compute = { git = "https://github.com/connorslade/compute", features = [
+#     "interactive",
+# ] }
 
 anyhow = "1.0.95"
+bitflags = "2.8.0"
 encase = { version = "0.10.0", features = ["nalgebra"] }
+image = "0.25.5"
 ordered-float = "4.6.0"
 plexus = "0.0.11"
 tobj = "4.0.3"
-image = "0.25.5"
-bitflags = "2.8.0"

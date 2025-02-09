@@ -8,7 +8,7 @@ use camera::Camera;
 use compute::{
     export::{
         nalgebra::{Vector2, Vector3},
-        wgpu::{PowerPreference, ShaderStages},
+        wgpu::{Features, PowerPreference, ShaderStages},
         winit::window::WindowAttributes,
     },
     gpu::Gpu,
@@ -28,8 +28,12 @@ use types::{Flags, Uniform};
 
 fn main() -> Result<()> {
     let gpu = Gpu::builder()
-        .with_raytracing()
         .power_preference(PowerPreference::HighPerformance)
+        .with_features(
+            Features::TEXTURE_BINDING_ARRAY
+                | Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING,
+        )
+        .with_raytracing()
         .build()?;
 
     let mut scene = Scene::empty();
@@ -39,19 +43,22 @@ fn main() -> Result<()> {
     let uniform_buffer = gpu.create_uniform(&Uniform::default())?;
     let accumulation_buffer = gpu.create_storage::<Vec<Vector3<f32>>>(&vec![])?;
 
+    let sampler = gpu.create_sampler();
     let compute_pipeline = gpu
         .compute_pipeline(COMPUTE_SOURCE)
-        .bind_buffer(&uniform_buffer)
-        .bind_buffer(&accumulation_buffer)
-        .bind_buffer(&buffers.models)
-        .bind_buffer(&buffers.acceleration)
-        .bind_buffer(&buffers.vertex)
-        .bind_buffer(&buffers.index)
+        .bind(&uniform_buffer)
+        .bind(&accumulation_buffer)
+        .bind(&buffers.models)
+        .bind(&buffers.acceleration)
+        .bind(&buffers.vertex)
+        .bind(&buffers.index)
+        .bind(&sampler)
+        .bind(&buffers.textures)
         .finish();
     let render_pipeline = gpu
         .render_pipeline(RENDER_SOURCE)
-        .bind_buffer(&uniform_buffer, ShaderStages::FRAGMENT)
-        .bind_buffer(&accumulation_buffer, ShaderStages::FRAGMENT)
+        .bind(&uniform_buffer, ShaderStages::FRAGMENT)
+        .bind(&accumulation_buffer, ShaderStages::FRAGMENT)
         .finish();
 
     gpu.create_window(

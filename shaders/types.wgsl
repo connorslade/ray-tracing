@@ -27,6 +27,7 @@ struct Material {
 
 struct MetalMaterial {
     diffuse_color: vec3f,
+    diffuse_texture: u32,
     specular_color: vec3f,
 
     specular_probability: f32,
@@ -48,7 +49,8 @@ struct Model {
 
 struct Vertex {
     position: vec3f,
-    normal: vec3f
+    normal: vec3f,
+    uv: vec2f
 }
 
 struct Ray {
@@ -66,16 +68,17 @@ struct Intersection {
     front_face: bool,
     material: Material,
     normal: vec3f,
-    position: vec3f
+    position: vec3f,
+    uv: vec2f
 }
 
 fn intersection_miss() -> Intersection {
-    return Intersection(false, true, default_material(), vec3f(0.0), vec3f(0.0));
+    return Intersection(false, true, default_material(), vec3f(0.0), vec3f(0.0), vec2f(0.0));
 }
 
 fn default_material() -> Material {
     return Material(0,
-        MetalMaterial(vec3(1.0), vec3(0.0), 0.0, 0.0, vec3(0.0), 0.0),
+        MetalMaterial(vec3(1.0), 0, vec3(0.0), 0.0, 0.0, vec3(0.0), 0.0),
         DielectricMaterial(1.0)
     );
 }

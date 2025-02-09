@@ -9,16 +9,21 @@ fn ray_direction(pos: vec2f) -> vec3f {
     return normalize(forward + right * uv.x + up * uv.y);
 }
 
-fn get_scattered_direction_metal(ray: Ray, normal: vec3f, material: MetalMaterial) -> ScatterResult {
+fn get_scattered_direction_metal(ray: Ray, trace: Intersection, material: MetalMaterial) -> ScatterResult {
     let is_specular = f32(rand() < material.specular_probability);
     let smoothness = 1.0 - material.roughness;
 
-    let diffuse = rand_hemisphere_vector(normal);
-    let specular = reflect(ray.dir, normal);
+    let diffuse = rand_hemisphere_vector(trace.normal);
+    let specular = reflect(ray.dir, trace.normal);
+
+    var diffuse_color = material.diffuse_color;
+    if material.diffuse_texture > 0 {
+        diffuse_color = textureSampleLevel(textures[material.diffuse_texture - 1], texture_sampler, trace.uv, 0.0).xyz;
+    };
 
     return ScatterResult(
         mix(diffuse, specular, smoothness * is_specular),
-        mix(material.diffuse_color, material.specular_color, is_specular)
+        mix(diffuse_color, material.specular_color, is_specular)
     );
 }
 

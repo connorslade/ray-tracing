@@ -6,6 +6,9 @@
 @group(0) @binding(4) var<storage, read> vertex: array<Vertex>;
 @group(0) @binding(5) var<storage, read> index: array<u32>;
 
+@group(0) @binding(6) var texture_sampler: sampler;
+@group(0) @binding(7) var textures: binding_array<texture_2d<f32>>;
+
 const PI: f32 = 3.141592653589793;
 
 @compute
@@ -51,7 +54,7 @@ fn sample(pos: vec2f) -> vec3f {
             let material = trace.material.metal;
 
             let emitted = material.emission_color * material.emission_strength;
-            let scatter = get_scattered_direction_metal(ray, trace.normal, material);
+            let scatter = get_scattered_direction_metal(ray, trace, material);
             light += emitted * color;
             color *= scatter.color;
 
@@ -90,11 +93,12 @@ fn trace_ray(ray: Ray) -> Intersection {
     let bary = vec3f(1.0 - intersection.barycentrics.x - intersection.barycentrics.y, intersection.barycentrics);
     let normal = v0.normal * bary.x + v1.normal * bary.y + v2.normal * bary.z;
     let position = v0.position * bary.x + v1.position * bary.y + v2.position * bary.z;
+    let uv = v0.uv * bary.x + v1.uv * bary.y + v2.uv * bary.z;
 
     let transformed_position = (intersection.object_to_world * vec4f(position, 1.0)).xyz;
     let transformed_normal = (intersection.object_to_world * vec4f(normal, 0.0)).xyz;
 
-    return Intersection(true, intersection.front_face, model.material, transformed_normal, transformed_position);
+    return Intersection(true, intersection.front_face, model.material, transformed_normal, transformed_position, uv);
 }
 
 fn schlick_approximation(cos_theta: f32, refractive_index: f32) -> f32 {
