@@ -66,16 +66,20 @@ impl Scene {
         let models = self.models.iter().map(|x| x.to_gpu()).collect::<Vec<_>>();
         let models = gpu.create_storage_read(&models)?;
 
-        let textures = self
-            .textures
-            .iter()
-            .map(|image| {
-                let size = Vector2::new(image.width(), image.height());
-                let texture = gpu.create_texture_2d(size);
-                texture.upload(size, &imageops::flip_vertical(image));
-                texture
-            })
-            .collect::<Vec<_>>();
+        let textures = if self.textures.is_empty() {
+            vec![gpu.create_texture_2d(Vector2::new(1, 1))] // shrug
+        } else {
+            self.textures
+                .iter()
+                .map(|image| {
+                    let size = Vector2::new(image.width(), image.height());
+                    let texture = gpu.create_texture_2d(size);
+                    texture.upload(size, &imageops::flip_vertical(image));
+                    texture
+                })
+                .collect::<Vec<_>>()
+        };
+
         let textures = gpu.create_texture_collection(&textures);
 
         Ok(SceneBuffers {

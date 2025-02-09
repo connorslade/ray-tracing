@@ -15,7 +15,15 @@ fn rand_unit_vector() -> vec3f {
     return vec3(x, y, z);
 }
 
-fn rand_hemisphere_vector(normal: vec3f) -> vec3f {
-    let unit = rand_unit_vector();
-    return unit * sign(dot(unit, normal));
+fn rand_cosine_hemisphere_vector(normal: vec3<f32>) -> vec3<f32> {
+    let r = sqrt(rand());
+    let theta = 2.0 * PI * rand();
+
+    let sample = vec3f(
+        r * cos(theta),
+        r * sin(theta),
+        sqrt(1.0 - r * r)
+    );
+
+    return tangent_space(normal, sample);
 }
