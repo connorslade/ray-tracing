@@ -36,7 +36,8 @@ struct MetalMaterial {
     emission_color: vec3f,
     emission_strength: f32,
 
-    diffuse_texture: u32
+    diffuse_texture: u32,
+    normal_texture: u32
 }
 
 struct DielectricMaterial {
@@ -80,7 +81,7 @@ fn intersection_miss() -> Intersection {
 
 fn default_material() -> Material {
     return Material(0,
-        MetalMaterial(vec3(1.0), vec3(0.0), 0.0, 0.0, vec3(0.0), 0.0, 0),
+        MetalMaterial(vec3(1.0), vec3(0.0), 0.0, 0.0, vec3(0.0), 0.0, 0, 0),
         DielectricMaterial(1.0)
     );
 }

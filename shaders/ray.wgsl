@@ -13,8 +13,14 @@ fn get_scattered_direction_metal(ray: Ray, trace: Intersection, material: MetalM
     let is_specular = f32(rand() < material.specular_probability);
     let smoothness = 1.0 - material.roughness;
 
-    let diffuse = rand_cosine_hemisphere_vector(trace.normal);
-    let specular = reflect(ray.dir, trace.normal);
+    var normal = trace.normal;
+    if material.normal_texture > 0 {
+        let sample = sample_rgb(material.normal_texture - 1, trace.uv) * 2.0 - 1.0;
+        normal = tangent_space(normal, sample);
+    }
+
+    let diffuse = rand_cosine_hemisphere_vector(normal);
+    let specular = reflect(ray.dir, normal);
 
     var diffuse_color = material.diffuse_color;
     if material.diffuse_texture > 0 { diffuse_color = sample_rgb(material.diffuse_texture - 1, trace.uv); }

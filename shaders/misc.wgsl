@@ -10,6 +10,7 @@ fn sample_rgb(texture: u32, uv: vec2f) -> vec3f {
 fn tangent_space(normal: vec3<f32>, sample: vec3<f32>) -> vec3<f32> {
     var arbitrary = vec3f(1.0, 0.0, 0.0);
     if abs(normal.x) > 0.9 { arbitrary = vec3f(0.0, 1.0, 0.0); }
+    else if abs(normal.y) > 0.9 { arbitrary = vec3f(0.0, 0.0, 1.0); }
 
     let tangent = normalize(cross(arbitrary, normal));
     let bitangent = cross(normal, tangent);

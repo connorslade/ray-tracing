@@ -158,9 +158,15 @@ impl Scene {
                 if let Some(file) = path {
                     let path = dir.join(strip_flags(file));
                     let file = BufReader::new(File::open(&path).unwrap());
-                    let format = ImageFormat::from_path(path).unwrap();
+                    let format = ImageFormat::from_path(&path).unwrap();
 
-                    let image = image::load(file, format).unwrap().into_rgba8();
+                    let image = match image::load(file, format) {
+                        Result::Ok(x) => x.into_rgba8(),
+                        Result::Err(e) => {
+                            println!("While loading {path:?}");
+                            panic!("{e}");
+                        }
+                    };
                     self.textures.push(image);
                     self.textures.len() as u32
                 } else {
@@ -169,6 +175,7 @@ impl Scene {
             };
 
             let diffuse_texture = load_texture(&material.diffuse_texture);
+            let normal_texture = load_texture(&material.normal_texture);
 
             self.models.push(Model {
                 name: model.name,
@@ -185,6 +192,7 @@ impl Scene {
                     emission_strength: emission.magnitude(),
 
                     diffuse_texture,
+                    normal_texture,
                 }),
                 vertex_start: first_vertex as u32,
                 index_start: first_index as u32,

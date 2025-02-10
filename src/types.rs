@@ -54,6 +54,7 @@ pub struct MetalMaterial {
     pub emission_strength: f32,
 
     pub diffuse_texture: u32,
+    pub normal_texture: u32,
 }
 
 #[derive(ShaderType, Debug, Default, Clone, Copy, PartialEq)]
