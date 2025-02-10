@@ -1,8 +1,13 @@
 # `ray-tracing`
 
-![ray-tracing_6LdvzyodYk-fs8-fs8](https://github.com/user-attachments/assets/4d55f58b-ba2d-48b7-b8b3-2186a24164c0)
+A GPU accelerated ray tracer built with WGPU through my [compute](https://github.com/connorslade/compute) library.
 
-![Screenshot from 2025-02-02 at 23_58_49 864194855](https://github.com/user-attachments/assets/ac8e2f24-36cd-40e1-a12c-6ebbd424bf3f)
+# Screenshots
+
+<img src="https://github.com/user-attachments/assets/b1dac60a-ad93-473e-9693-a01be8c95665" width="49.5%"></img>
+<img src="https://github.com/user-attachments/assets/27c725ce-fc9e-46e9-bf22-568bedf32d0f" width="49.5%"></img>
+
+<img src="https://github.com/user-attachments/assets/ba3b41bf-9d83-4101-b00e-63d276aac88b" width="99%"></img>
 
 ## References
 
